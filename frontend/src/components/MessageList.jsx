@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, User, Loader2, SmilePlus } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2 } from 'lucide-react';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '👏', '🔥', '😢', '🤔', '👎'];
 
@@ -210,7 +210,7 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
   );
 }
 
-export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction }) {
+export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage }) {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -285,19 +285,32 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             {formatTime(msg.timestamp)}
                           </span>
                         </TimestampTooltip>
+                        {isMe && !msg.deleted && (
+                          <button
+                            onClick={() => onDeleteMessage && onDeleteMessage(msg.id)}
+                            className="ml-2 p-1 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded transition-all opacity-0 group-hover:opacity-100"
+                            title="Delete message"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     )}
-                    <div className={`text-gray-100 break-words ${isConsecutive ? 'mt-0.5' : ''}`}>
+                    <div className={`break-words ${isConsecutive ? 'mt-0.5' : ''} ${
+                      msg.deleted ? 'text-gray-500 italic text-sm' : 'text-gray-100'
+                    }`}>
                       {msg.content}
                     </div>
                     
-                    <MessageReactions
-                      messageId={msg.id}
-                      reactions={msgReactions}
-                      currentUserId={currentUser?.id}
-                      onAddReaction={onAddReaction}
-                      onRemoveReaction={onRemoveReaction}
-                    />
+                    {!msg.deleted && (
+                      <MessageReactions
+                        messageId={msg.id}
+                        reactions={msgReactions}
+                        currentUserId={currentUser?.id}
+                        onAddReaction={onAddReaction}
+                        onRemoveReaction={onRemoveReaction}
+                      />
+                    )}
                   </div>
                 </div>
               );

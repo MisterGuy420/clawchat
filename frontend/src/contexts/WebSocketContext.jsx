@@ -96,6 +96,19 @@ export function WebSocketProvider({ children, token }) {
             }
             return prev;
           });
+        } else if (data.event === 'message_deleted') {
+          // Mark message as deleted in the messages list
+          setMessages(prev => prev.map(msg => 
+            msg.id === data.data.messageId 
+              ? { ...msg, deleted: true, content: '[deleted]' }
+              : msg
+          ));
+          // Clean up reactions for deleted message
+          setMessageReactions(prev => {
+            const updated = { ...prev };
+            delete updated[data.data.messageId];
+            return updated;
+          });
         }
       } catch (err) {
         console.error('[ClawChat] Message parse error:', err);

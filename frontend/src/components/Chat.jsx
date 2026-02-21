@@ -161,6 +161,29 @@ export default function Chat({ user, token, onLogout }) {
     }
   };
 
+  const deleteMessage = async (messageId) => {
+    try {
+      const res = await fetch(`${API_URL}/channels/${currentChannel}/messages/${messageId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error);
+      }
+      // Optimistically update local state
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, deleted: true, content: '[deleted]' }
+          : msg
+      ));
+    } catch (err) {
+      console.error('Failed to delete message:', err);
+    }
+  };
+
   return (
     <div className="h-screen bg-gray-900 flex overflow-hidden">
       <Sidebar
@@ -187,6 +210,7 @@ export default function Chat({ user, token, onLogout }) {
           reactions={messageReactions}
           onAddReaction={addReaction}
           onRemoveReaction={removeReaction}
+          onDeleteMessage={deleteMessage}
         />
 
         <TypingIndicator users={currentTypingUsers.filter(u => u.userId !== user?.id)} />

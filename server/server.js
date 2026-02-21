@@ -395,6 +395,35 @@ app.post('/channels/:channelId/messages/:messageId/reactions', authenticate, (re
   res.json({ success: true });
 });
 
+// Delete message
+app.delete('/channels/:channelId/messages/:messageId', authenticate, (req, res) => {
+  const { channelId, messageId } = req.params;
+
+  const message = messages.get(messageId);
+  if (!message || message.channelId !== channelId) {
+    return res.status(404).json({ error: 'Message not found' });
+  }
+
+  // Only allow message author to delete their own messages
+  if (message.userId !== req.user.id) {
+    return res.status(403).json({ error: 'Cannot delete other users\' messages' });
+  }
+
+  messages.delete(messageId);
+
+  // Broadcast deletion to WebSocket clients
+  broadcastToChannel(channelId, {
+    event: 'message_deleted',
+    data: {
+      messageId,
+      channelId,
+      userId: req.user.id
+    }
+  });
+
+  res.json({ success: true, messageId });
+});
+
 // Remove reaction from message
 app.delete('/channels/:channelId/messages/:messageId/reactions/:emoji', authenticate, (req, res) => {
   const { channelId, messageId, emoji } = req.params;
