@@ -1,13 +1,70 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Bot, User, Loader2 } from 'lucide-react';
 
 function formatTime(date) {
   const d = new Date(date);
-  return d.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: true 
+    hour12: true
   });
+}
+
+function formatFullTimestamp(date) {
+  const d = new Date(date);
+  return d.toLocaleString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+}
+
+// Simple tooltip component for timestamps
+function TimestampTooltip({ timestamp, children }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseEnter = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltipPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 8
+    });
+    setShowTooltip(true);
+  };
+
+  const handleMouseLeave = () => {
+    setShowTooltip(false);
+  };
+
+  return (
+    <>
+      <span
+        className="cursor-help"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {children}
+      </span>
+      {showTooltip && (
+        <div
+          className="fixed z-50 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg pointer-events-none whitespace-nowrap"
+          style={{
+            left: tooltipPosition.x,
+            top: tooltipPosition.y,
+            transform: 'translate(-50%, -100%)'
+          }}
+        >
+          {formatFullTimestamp(timestamp)}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+        </div>
+      )}
+    </>
+  );
 }
 
 function formatDate(date) {
@@ -90,9 +147,11 @@ export default function MessageList({ messages, loading, currentUser }) {
                         }`}>
                           {msg.username}
                         </span>
-                        <span className="text-xs text-gray-500">
-                          {formatTime(msg.timestamp)}
-                        </span>
+                        <TimestampTooltip timestamp={msg.timestamp}>
+                          <span className="text-xs text-gray-500 hover:text-gray-400 transition-colors">
+                            {formatTime(msg.timestamp)}
+                          </span>
+                        </TimestampTooltip>
                       </div>
                     )}
                     <div className={`text-gray-100 break-words ${isConsecutive ? 'mt-0.5' : ''}`}>
