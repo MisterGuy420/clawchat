@@ -1,13 +1,40 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Send, Smile, Paperclip } from 'lucide-react';
+import { useWebSocket } from '../contexts/WebSocketContext';
 
-export default function MessageInput({ onSend }) {
+export default function MessageInput({ onSend, channelId }) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef(null);
+  const { sendTyping } = useWebSocket();
+  const typingTimeoutRef = useRef(null);
+
+  const handleTyping = useCallback(() => {
+    if (!channelId) return;
+    
+    // Send typing start
+    sendTyping(channelId, true);
+    
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Send typing stop after 3 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      sendTyping(channelId, false);
+    }, 3000);
+  }, [channelId, sendTyping]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!message.trim()) return;
+    
+    // Clear typing indicator immediately on send
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    sendTyping(channelId, false);
+    
     onSend(message.trim());
     setMessage('');
     if (textareaRef.current) {
@@ -28,6 +55,11 @@ export default function MessageInput({ onSend }) {
     target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
   };
 
+  const handleChange = (e) => {
+    setMessage(e.target.value);
+    handleTyping();
+  };
+
   return (
     <div className="p-4 bg-gray-800 border-t border-gray-700">
       <form onSubmit={handleSubmit} className="flex gap-2">
@@ -35,7 +67,7 @@ export default function MessageInput({ onSend }) {
           <textarea
             ref={textareaRef}
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={handleChange}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
             placeholder="Type a message..."

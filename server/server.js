@@ -54,6 +54,7 @@ const users = new Map();
 const channels = new Map();
 const messages = new Map();
 const sessions = new Map();
+const typingUsers = new Map(); // channelId -> Set of userIds typing
 
 // Default channels
 channels.set('general', {
@@ -469,10 +470,12 @@ const wss = new WebSocketServer({ server, path: '/ws' });
 
 const clients = new Map();
 
-function broadcastToChannel(channelId, data) {
+function broadcastToChannel(channelId, data, excludeUserId = null) {
   for (const [ws, client] of clients) {
     if (client.channels?.has(channelId) && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(data));
+      if (!excludeUserId || client.userId !== excludeUserId) {
+        ws.send(JSON.stringify(data));
+      }
     }
   }
 }
@@ -483,6 +486,64 @@ function broadcastToUser(userId, data) {
       ws.send(JSON.stringify(data));
     }
   }
+}
+
+// Typing indicator timeouts
+const typingTimeouts = new Map(); // userId_channelId -> timeout
+
+function scheduleTypingClear(userId, channelId) {
+  const key = `${userId}_${channelId}`;
+  if (typingTimeouts.has(key)) {
+    clearTimeout(typingTimeouts.get(key));
+  }
+  const timeout = setTimeout(() => {
+    broadcastTyping(userId, channelId, false);
+    typingTimeouts.delete(key);
+  }, 10000);
+  typingTimeouts.set(key, timeout);
+}
+
+function broadcastTyping(userId, channelId, isTyping) {
+  if (!typingUsers.has(channelId)) {
+    typingUsers.set(channelId, new Set());
+  }
+  const channelTypers = typingUsers.get(channelId);
+  
+  if (isTyping) {
+    channelTypers.add(userId);
+    scheduleTypingClear(userId, channelId);
+  } else {
+    channelTypers.delete(userId);
+    const key = `${userId}_${channelId}`;
+    if (typingTimeouts.has(key)) {
+      clearTimeout(typingTimeouts.get(key));
+      typingTimeouts.delete(key);
+    }
+  }
+  
+  // Broadcast typing update to channel
+  const user = users.get(userId);
+  if (user) {
+    broadcastToChannel(channelId, {
+      event: 'typing',
+      data: {
+        channelId,
+        userId,
+        username: user.username,
+        userType: user.type,
+        isTyping
+      }
+    }, userId); // Exclude sender
+  }
+}
+
+function getTypingUsers(channelId) {
+  if (!typingUsers.has(channelId)) return [];
+  const userIds = Array.from(typingUsers.get(channelId));
+  return userIds.map(id => {
+    const user = users.get(id);
+    return user ? { id: user.id, username: user.username, type: user.type } : null;
+  }).filter(Boolean);
 }
 
 wss.on('connection', (ws, req) => {
@@ -545,6 +606,14 @@ wss.on('connection', (ws, req) => {
       if (parsed.event === 'ping') {
         ws.send(JSON.stringify({ event: 'pong', timestamp: Date.now() }));
       }
+
+      if (parsed.event === 'typing') {
+        const channelId = parsed.data?.channelId;
+        const isTyping = parsed.data?.isTyping;
+        if (channelId && typeof isTyping === 'boolean') {
+          broadcastTyping(user.id, channelId, isTyping);
+        }
+      }
     } catch (err) {
       console.error('[ClawChat] WebSocket message error:', err);
     }
@@ -552,6 +621,12 @@ wss.on('connection', (ws, req) => {
 
   ws.on('close', () => {
     console.log(`[ClawChat] WebSocket disconnected: ${user.username}`);
+    // Clear typing status on disconnect
+    for (const [channelId, typers] of typingUsers) {
+      if (typers.has(user.id)) {
+        broadcastTyping(user.id, channelId, false);
+      }
+    }
     clients.delete(ws);
   });
 

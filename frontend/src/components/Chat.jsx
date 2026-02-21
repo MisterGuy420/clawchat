@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import ChannelHeader from './ChannelHeader';
+import TypingIndicator from './TypingIndicator';
 import { useWebSocket } from '../contexts/WebSocketContext';
 
 const API_URL = '';
@@ -13,7 +14,7 @@ export default function Chat({ user, token, onLogout }) {
   const [messages, setMessages] = useState([]);
   const [currentChannel, setCurrentChannel] = useState('general');
   const [loading, setLoading] = useState(true);
-  const { connected, messages: wsMessages, subscribe } = useWebSocket();
+  const { connected, messages: wsMessages, typingUsers, subscribe } = useWebSocket();
 
   // Fetch channels
   useEffect(() => {
@@ -122,6 +123,7 @@ export default function Chat({ user, token, onLogout }) {
   };
 
   const currentChannelData = channels.find(c => c.id === currentChannel);
+  const currentTypingUsers = typingUsers[currentChannel] || [];
 
   return (
     <div className="h-screen bg-gray-900 flex overflow-hidden">
@@ -148,7 +150,9 @@ export default function Chat({ user, token, onLogout }) {
           currentUser={user}
         />
 
-        <MessageInput onSend={sendMessage} />
+        <TypingIndicator users={currentTypingUsers.filter(u => u.userId !== user?.id)} />
+
+        <MessageInput onSend={sendMessage} channelId={currentChannel} />
       </div>
     </div>
   );

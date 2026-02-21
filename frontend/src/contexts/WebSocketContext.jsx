@@ -7,7 +7,9 @@ export function WebSocketProvider({ children, token }) {
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState([]);
   const [currentChannel, setCurrentChannel] = useState('general');
+  const [typingUsers, setTypingUsers] = useState({}); // channelId -> { userId, username, userType }
   const reconnectTimeout = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   const connect = useCallback(() => {
     const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws?token=${token}`;
@@ -29,6 +31,30 @@ export function WebSocketProvider({ children, token }) {
         const data = JSON.parse(event.data);
         if (data.event === 'message') {
           setMessages(prev => [...prev, data.data]);
+          // Clear typing indicator when user sends a message
+          if (data.data.channelId) {
+            setTypingUsers(prev => ({
+              ...prev,
+              [data.data.channelId]: (prev[data.data.channelId] || []).filter(
+                u => u.userId !== data.data.userId
+              )
+            }));
+          }
+        } else if (data.event === 'typing') {
+          const { channelId, userId, username, userType, isTyping } = data.data;
+          setTypingUsers(prev => {
+            const current = prev[channelId] || [];
+            if (isTyping) {
+              // Add user if not already present
+              if (!current.find(u => u.userId === userId)) {
+                return { ...prev, [channelId]: [...current, { userId, username, userType }] };
+              }
+            } else {
+              // Remove user
+              return { ...prev, [channelId]: current.filter(u => u.userId !== userId) };
+            }
+            return prev;
+          });
         }
       } catch (err) {
         console.error('[ClawChat] Message parse error:', err);
@@ -70,12 +96,23 @@ export function WebSocketProvider({ children, token }) {
     setMessages([]);
   }, []);
 
+  const sendTyping = useCallback((channelId, isTyping) => {
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({
+        event: 'typing',
+        data: { channelId, isTyping }
+      }));
+    }
+  }, []);
+
   const value = {
     ws: ws.current,
     connected,
     messages,
     currentChannel,
-    subscribe
+    typingUsers,
+    subscribe,
+    sendTyping
   };
 
   return (
