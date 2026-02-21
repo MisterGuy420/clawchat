@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, User, Loader2, SmilePlus, Trash2 } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X } from 'lucide-react';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '👏', '🔥', '😢', '🤔', '👎'];
 
@@ -210,15 +210,100 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
   );
 }
 
-export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage }) {
+// Message edit form
+function MessageEditForm({ content, onSave, onCancel }) {
+  const [editContent, setEditContent] = useState(content);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.select();
+    }
+  }, []);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
+
+  const handleSave = () => {
+    const trimmed = editContent.trim();
+    if (trimmed && trimmed !== content) {
+      onSave(trimmed);
+    } else if (!trimmed) {
+      // Don't allow saving empty content, cancel instead
+      onCancel();
+    } else {
+      onCancel();
+    }
+  };
+
+  return (
+    <div className="flex-1">
+      <textarea
+        ref={textareaRef}
+        value={editContent}
+        onChange={(e) => setEditContent(e.target.value)}
+        onKeyDown={handleKeyDown}
+        className="w-full bg-gray-800 border border-claw-500 rounded-lg px-3 py-2 text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-claw-500"
+        rows={Math.min(5, editContent.split('\n').length + 1)}
+        style={{ minHeight: '40px' }}
+      />
+      <div className="flex items-center gap-2 mt-2">
+        <button
+          onClick={handleSave}
+          className="flex items-center gap-1 px-3 py-1 bg-claw-600 hover:bg-claw-700 text-white text-sm rounded transition-colors"
+        >
+          <Check className="w-3.5 h-3.5" />
+          Save
+        </button>
+        <button
+          onClick={onCancel}
+          className="flex items-center gap-1 px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded transition-colors"
+        >
+          <X className="w-3.5 h-3.5" />
+          Cancel
+        </button>
+        <span className="text-xs text-gray-500 ml-2">
+          Press Enter to save, Escape to cancel
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage }) {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
+  const [editingMessageId, setEditingMessageId] = useState(null);
 
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  const handleEditStart = (messageId) => {
+    setEditingMessageId(messageId);
+  };
+
+  const handleEditSave = async (messageId, newContent) => {
+    try {
+      await onEditMessage(messageId, newContent);
+      setEditingMessageId(null);
+    } catch (err) {
+      // Error handled in parent
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingMessageId(null);
+  };
 
   if (loading) {
     return (
@@ -252,6 +337,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
               const isConsecutive = prevMsg && prevMsg.userId === msg.userId;
               const isMe = msg.userId === currentUser?.id;
               const msgReactions = reactions?.[msg.id] || msg.reactions || {};
+              const isEditing = editingMessageId === msg.id;
 
               return (
                 <div
@@ -285,31 +371,58 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             {formatTime(msg.timestamp)}
                           </span>
                         </TimestampTooltip>
-                        {isMe && !msg.deleted && (
-                          <button
-                            onClick={() => onDeleteMessage && onDeleteMessage(msg.id)}
-                            className="ml-2 p-1 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded transition-all opacity-0 group-hover:opacity-100"
-                            title="Delete message"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        {msg.edited && (
+                          <span className="text-xs text-gray-500 italic" title={msg.editedAt ? formatFullTimestamp(msg.editedAt) : 'Edited'}>
+                            (edited)
+                          </span>
+                        )}
+                        {isMe && !msg.deleted && !isEditing && (
+                          <>
+                            <button
+                              onClick={() => handleEditStart(msg.id)}
+                              className="ml-1 p-1 text-gray-600 hover:text-claw-400 hover:bg-claw-500/10 rounded transition-all opacity-0 group-hover:opacity-100"
+                              title="Edit message"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => onDeleteMessage && onDeleteMessage(msg.id)}
+                              className="ml-1 p-1 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded transition-all opacity-0 group-hover:opacity-100"
+                              title="Delete message"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
                         )}
                       </div>
                     )}
-                    <div className={`break-words ${isConsecutive ? 'mt-0.5' : ''} ${
-                      msg.deleted ? 'text-gray-500 italic text-sm' : 'text-gray-100'
-                    }`}>
-                      {msg.content}
-                    </div>
                     
-                    {!msg.deleted && (
-                      <MessageReactions
-                        messageId={msg.id}
-                        reactions={msgReactions}
-                        currentUserId={currentUser?.id}
-                        onAddReaction={onAddReaction}
-                        onRemoveReaction={onRemoveReaction}
-                      />
+                    {isEditing ? (
+                      <div className={isConsecutive ? 'mt-0.5' : ''}>
+                        <MessageEditForm
+                          content={msg.content}
+                          onSave={(newContent) => handleEditSave(msg.id, newContent)}
+                          onCancel={handleEditCancel}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className={`break-words ${isConsecutive ? 'mt-0.5' : ''} ${
+                          msg.deleted ? 'text-gray-500 italic text-sm' : 'text-gray-100'
+                        }`}>
+                          {msg.content}
+                        </div>
+                        
+                        {!msg.deleted && (
+                          <MessageReactions
+                            messageId={msg.id}
+                            reactions={msgReactions}
+                            currentUserId={currentUser?.id}
+                            onAddReaction={onAddReaction}
+                            onRemoveReaction={onRemoveReaction}
+                          />
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

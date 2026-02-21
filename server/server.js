@@ -424,6 +424,57 @@ app.delete('/channels/:channelId/messages/:messageId', authenticate, (req, res) 
   res.json({ success: true, messageId });
 });
 
+// Edit message
+app.put('/channels/:channelId/messages/:messageId', authenticate, (req, res) => {
+  const { channelId, messageId } = req.params;
+  const { content } = req.body;
+
+  if (!content || typeof content !== 'string') {
+    return res.status(400).json({ error: 'Message content is required' });
+  }
+
+  const message = messages.get(messageId);
+  if (!message || message.channelId !== channelId) {
+    return res.status(404).json({ error: 'Message not found' });
+  }
+
+  // Only allow message author to edit their own messages
+  if (message.userId !== req.user.id) {
+    return res.status(403).json({ error: 'Cannot edit other users\' messages' });
+  }
+
+  // Don't allow editing deleted messages
+  if (message.deleted) {
+    return res.status(400).json({ error: 'Cannot edit deleted messages' });
+  }
+
+  // Update message
+  message.content = content.slice(0, 2000);
+  message.editedAt = new Date();
+  message.edited = true;
+
+  // Broadcast edit to WebSocket clients
+  broadcastToChannel(channelId, {
+    event: 'message_edited',
+    data: {
+      messageId,
+      channelId,
+      userId: req.user.id,
+      content: message.content,
+      editedAt: message.editedAt,
+      username: req.user.username,
+      userType: req.user.type
+    }
+  });
+
+  res.json({
+    id: messageId,
+    content: message.content,
+    edited: true,
+    editedAt: message.editedAt
+  });
+});
+
 // Remove reaction from message
 app.delete('/channels/:channelId/messages/:messageId/reactions/:emoji', authenticate, (req, res) => {
   const { channelId, messageId, emoji } = req.params;

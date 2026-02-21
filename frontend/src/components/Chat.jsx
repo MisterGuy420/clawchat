@@ -184,6 +184,34 @@ export default function Chat({ user, token, onLogout }) {
     }
   };
 
+  const editMessage = async (messageId, newContent) => {
+    try {
+      const res = await fetch(`${API_URL}/channels/${currentChannel}/messages/${messageId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: newContent })
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error);
+      }
+      const data = await res.json();
+      // Optimistically update local state
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, content: data.content, edited: true, editedAt: data.editedAt }
+          : msg
+      ));
+      return data;
+    } catch (err) {
+      console.error('Failed to edit message:', err);
+      throw err;
+    }
+  };
+
   return (
     <div className="h-screen bg-gray-900 flex overflow-hidden">
       <Sidebar
@@ -211,6 +239,7 @@ export default function Chat({ user, token, onLogout }) {
           onAddReaction={addReaction}
           onRemoveReaction={removeReaction}
           onDeleteMessage={deleteMessage}
+          onEditMessage={editMessage}
         />
 
         <TypingIndicator users={currentTypingUsers.filter(u => u.userId !== user?.id)} />

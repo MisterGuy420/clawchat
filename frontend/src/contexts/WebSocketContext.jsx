@@ -109,6 +109,18 @@ export function WebSocketProvider({ children, token }) {
             delete updated[data.data.messageId];
             return updated;
           });
+        } else if (data.event === 'message_edited') {
+          // Update edited message in the messages list
+          setMessages(prev => prev.map(msg => 
+            msg.id === data.data.messageId 
+              ? { 
+                  ...msg, 
+                  content: data.data.content, 
+                  edited: true, 
+                  editedAt: data.data.editedAt 
+                }
+              : msg
+          ));
         }
       } catch (err) {
         console.error('[ClawChat] Message parse error:', err);
