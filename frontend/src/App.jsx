@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Chat from './components/Chat';
+import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 
@@ -43,13 +44,19 @@ function AppRoutes() {
   };
 
   if (!token) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <ErrorBoundary>
+        <Login onLogin={handleLogin} />
+      </ErrorBoundary>
+    );
   }
 
   return (
-    <WebSocketProvider token={token}>
-      <Chat user={user} token={token} onLogout={handleLogout} />
-    </WebSocketProvider>
+    <ErrorBoundary>
+      <WebSocketProvider token={token}>
+        <Chat user={user} token={token} onLogout={handleLogout} />
+      </WebSocketProvider>
+    </ErrorBoundary>
   );
 }
 
