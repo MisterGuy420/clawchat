@@ -5,6 +5,7 @@ import MessageInput from './MessageInput';
 import ChannelHeader from './ChannelHeader';
 import TypingIndicator from './TypingIndicator';
 import { useWebSocket } from '../contexts/WebSocketContext';
+import { useToast } from '../contexts/ToastContext';
 
 const API_URL = '';
 
@@ -15,6 +16,7 @@ export default function Chat({ user, token, onLogout }) {
   const [currentChannel, setCurrentChannel] = useState('general');
   const [loading, setLoading] = useState(true);
   const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
+  const { error, success } = useToast();
 
   // Fetch channels
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function Chat({ user, token, onLogout }) {
       }
     } catch (err) {
       console.error('Failed to fetch channels:', err);
+      error('Failed to load channels. Please refresh the page.');
     }
   };
 
@@ -63,6 +66,7 @@ export default function Chat({ user, token, onLogout }) {
       setUsers(data.users || []);
     } catch (err) {
       console.error('Failed to fetch users:', err);
+      error('Failed to load users. Please try again later.');
     }
   };
 
@@ -76,6 +80,7 @@ export default function Chat({ user, token, onLogout }) {
       setMessages(data.messages || []);
     } catch (err) {
       console.error('Failed to fetch messages:', err);
+      error('Failed to load messages. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -92,11 +97,12 @@ export default function Chat({ user, token, onLogout }) {
         body: JSON.stringify({ content })
       });
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error);
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to send message');
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+      error(err.message || 'Failed to send message. Please try again.');
     }
   };
 
@@ -114,10 +120,14 @@ export default function Chat({ user, token, onLogout }) {
       if (res.ok) {
         await fetchChannels();
         setCurrentChannel(data.id);
+        success(`Channel #${name} created successfully!`);
+      } else {
+        throw new Error(data.error || 'Failed to create channel');
       }
       return data;
     } catch (err) {
       console.error('Failed to create channel:', err);
+      error(err.message || 'Failed to create channel. Please try again.');
       throw err;
     }
   };
@@ -136,11 +146,12 @@ export default function Chat({ user, token, onLogout }) {
         body: JSON.stringify({ emoji })
       });
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error);
+        const errorData = await res.json();
+        throw new Error(errorData.error);
       }
     } catch (err) {
       console.error('Failed to add reaction:', err);
+      error('Failed to add reaction. Please try again.');
     }
   };
 
@@ -153,11 +164,12 @@ export default function Chat({ user, token, onLogout }) {
         }
       });
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error);
+        const errorData = await res.json();
+        throw new Error(errorData.error);
       }
     } catch (err) {
       console.error('Failed to remove reaction:', err);
+      error('Failed to remove reaction. Please try again.');
     }
   };
 
@@ -170,8 +182,8 @@ export default function Chat({ user, token, onLogout }) {
         }
       });
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error);
+        const errorData = await res.json();
+        throw new Error(errorData.error);
       }
       // Optimistically update local state
       setMessages(prev => prev.map(msg => 
@@ -179,8 +191,10 @@ export default function Chat({ user, token, onLogout }) {
           ? { ...msg, deleted: true, content: '[deleted]' }
           : msg
       ));
+      success('Message deleted successfully');
     } catch (err) {
       console.error('Failed to delete message:', err);
+      error(err.message || 'Failed to delete message. Please try again.');
     }
   };
 
@@ -195,8 +209,8 @@ export default function Chat({ user, token, onLogout }) {
         body: JSON.stringify({ content: newContent })
       });
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error);
+        const errorData = await res.json();
+        throw new Error(errorData.error);
       }
       const data = await res.json();
       // Optimistically update local state
@@ -205,9 +219,11 @@ export default function Chat({ user, token, onLogout }) {
           ? { ...msg, content: data.content, edited: true, editedAt: data.editedAt }
           : msg
       ));
+      success('Message edited successfully');
       return data;
     } catch (err) {
       console.error('Failed to edit message:', err);
+      error(err.message || 'Failed to edit message. Please try again.');
       throw err;
     }
   };
