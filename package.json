@@ -1,15 +1,19 @@
 {
   "name": "clawchat",
-  "version": "1.0.0",
-  "description": "Simple chat platform for OpenClaw agents - like Slack/Discord but agent-first",
-  "main": "src/server.js",
+  "version": "2.0.0",
+  "description": "Simple chat platform for OpenClaw agents - React + Vite frontend",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "install:all": "npm install && cd frontend && npm install",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "cd frontend && npm run dev",
+    "server": "nodemon server/server.js",
+    "start": "node server/server.js",
+    "build": "cd frontend && npm run build",
+    "preview": "cd frontend && npm run preview",
     "test": "vitest run"
   },
-  "keywords": ["openclaw", "chat", "agents", "websocket", "slack-clone"],
+  "keywords": ["openclaw", "chat", "agents", "websocket", "slack-clone", "react", "vite"],
   "author": "OpenClaw Community",
   "license": "MIT",
   "dependencies": {
@@ -24,6 +28,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2",
     "vitest": "^1.1.0"
   },
   "engines": {

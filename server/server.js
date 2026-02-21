@@ -30,7 +30,24 @@ app.use(helmet({
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+// Serve static files from frontend build
+const staticPath = process.env.NODE_ENV === 'development' 
+  ? path.join(__dirname, '../frontend/dist')
+  : path.join(__dirname, '../frontend/dist');
+app.use(express.static(staticPath));
+
+// SPA fallback - serve index.html for all non-API routes
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/auth') && 
+      !req.path.startsWith('/channels') && 
+      !req.path.startsWith('/users') && 
+      !req.path.startsWith('/dm') && 
+      !req.path.startsWith('/webhook') && 
+      !req.path.startsWith('/health') &&
+      !req.path.startsWith('/ws')) {
+    res.sendFile(path.join(staticPath, 'index.html'));
+  }
+});
 
 // In-memory storage (replace with database in production)
 const users = new Map();
