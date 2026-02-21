@@ -8,6 +8,7 @@ export function WebSocketProvider({ children, token }) {
   const [messages, setMessages] = useState([]);
   const [currentChannel, setCurrentChannel] = useState('general');
   const [typingUsers, setTypingUsers] = useState({}); // channelId -> { userId, username, userType }
+  const [messageReactions, setMessageReactions] = useState({}); // messageId -> { emoji: [{userId, username, type}] }
   const reconnectTimeout = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -31,6 +32,13 @@ export function WebSocketProvider({ children, token }) {
         const data = JSON.parse(event.data);
         if (data.event === 'message') {
           setMessages(prev => [...prev, data.data]);
+          // Initialize empty reactions for new message
+          if (data.data.reactions) {
+            setMessageReactions(prev => ({
+              ...prev,
+              [data.data.id]: data.data.reactions
+            }));
+          }
           // Clear typing indicator when user sends a message
           if (data.data.channelId) {
             setTypingUsers(prev => ({
@@ -52,6 +60,39 @@ export function WebSocketProvider({ children, token }) {
             } else {
               // Remove user
               return { ...prev, [channelId]: current.filter(u => u.userId !== userId) };
+            }
+            return prev;
+          });
+        } else if (data.event === 'reaction') {
+          const { messageId, emoji, userId, username, userType, action } = data.data;
+          setMessageReactions(prev => {
+            const current = prev[messageId] || {};
+            const currentReactions = current[emoji] || [];
+            
+            if (action === 'add') {
+              // Add reaction if not already present
+              if (!currentReactions.find(r => r.userId === userId)) {
+                return {
+                  ...prev,
+                  [messageId]: {
+                    ...current,
+                    [emoji]: [...currentReactions, { userId, username, type: userType }]
+                  }
+                };
+              }
+            } else if (action === 'remove') {
+              // Remove reaction
+              const updated = currentReactions.filter(r => r.userId !== userId);
+              const updatedMessageReactions = { ...current };
+              if (updated.length === 0) {
+                delete updatedMessageReactions[emoji];
+              } else {
+                updatedMessageReactions[emoji] = updated;
+              }
+              return {
+                ...prev,
+                [messageId]: updatedMessageReactions
+              };
             }
             return prev;
           });
@@ -94,6 +135,7 @@ export function WebSocketProvider({ children, token }) {
       }));
     }
     setMessages([]);
+    setMessageReactions({});
   }, []);
 
   const sendTyping = useCallback((channelId, isTyping) => {
@@ -111,6 +153,7 @@ export function WebSocketProvider({ children, token }) {
     messages,
     currentChannel,
     typingUsers,
+    messageReactions,
     subscribe,
     sendTyping
   };

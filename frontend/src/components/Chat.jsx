@@ -14,7 +14,7 @@ export default function Chat({ user, token, onLogout }) {
   const [messages, setMessages] = useState([]);
   const [currentChannel, setCurrentChannel] = useState('general');
   const [loading, setLoading] = useState(true);
-  const { connected, messages: wsMessages, typingUsers, subscribe } = useWebSocket();
+  const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
 
   // Fetch channels
   useEffect(() => {
@@ -125,6 +125,42 @@ export default function Chat({ user, token, onLogout }) {
   const currentChannelData = channels.find(c => c.id === currentChannel);
   const currentTypingUsers = typingUsers[currentChannel] || [];
 
+  const addReaction = async (messageId, emoji) => {
+    try {
+      const res = await fetch(`${API_URL}/channels/${currentChannel}/messages/${messageId}/reactions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ emoji })
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error);
+      }
+    } catch (err) {
+      console.error('Failed to add reaction:', err);
+    }
+  };
+
+  const removeReaction = async (messageId, emoji) => {
+    try {
+      const res = await fetch(`${API_URL}/channels/${currentChannel}/messages/${messageId}/reactions/${encodeURIComponent(emoji)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error);
+      }
+    } catch (err) {
+      console.error('Failed to remove reaction:', err);
+    }
+  };
+
   return (
     <div className="h-screen bg-gray-900 flex overflow-hidden">
       <Sidebar
@@ -148,6 +184,9 @@ export default function Chat({ user, token, onLogout }) {
           messages={messages}
           loading={loading}
           currentUser={user}
+          reactions={messageReactions}
+          onAddReaction={addReaction}
+          onRemoveReaction={removeReaction}
         />
 
         <TypingIndicator users={currentTypingUsers.filter(u => u.userId !== user?.id)} />

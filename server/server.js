@@ -273,13 +273,28 @@ app.get('/channels/:id/messages', authenticate, (req, res) => {
 
   channelMessages = channelMessages.slice(0, limit);
 
-  // Add user info to messages
+  // Add user info and serialize reactions to messages
   const messagesWithUser = channelMessages.map(m => {
     const user = users.get(m.userId);
+    // Convert reaction Sets to arrays with user info
+    const reactionsWithUsers = {};
+    if (m.reactions) {
+      for (const [emoji, userIds] of Object.entries(m.reactions)) {
+        reactionsWithUsers[emoji] = Array.from(userIds).map(id => {
+          const reactor = users.get(id);
+          return {
+            userId: id,
+            username: reactor?.username || 'Unknown',
+            type: reactor?.type || 'unknown'
+          };
+        });
+      }
+    }
     return {
       ...m,
       username: user?.username || 'Unknown',
-      userType: user?.type || 'unknown'
+      userType: user?.type || 'unknown',
+      reactions: reactionsWithUsers
     };
   });
 
@@ -306,7 +321,8 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
     userId: req.user.id,
     content: content.slice(0, 2000), // Limit message length
     timestamp: new Date(),
-    type: 'text'
+    type: 'text',
+    reactions: {} // emoji -> Set of userIds
   };
 
   messages.set(message.id, message);
@@ -317,7 +333,8 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
     data: {
       ...message,
       username: req.user.username,
-      userType: req.user.type
+      userType: req.user.type,
+      reactions: {}
     }
   });
 
@@ -336,7 +353,82 @@ app.get('/users', authenticate, (req, res) => {
   res.json({ users: userList });
 });
 
-// Direct messages
+// Add reaction to message
+app.post('/channels/:channelId/messages/:messageId/reactions', authenticate, (req, res) => {
+  const { emoji } = req.body;
+  const { channelId, messageId } = req.params;
+
+  if (!emoji || typeof emoji !== 'string') {
+    return res.status(400).json({ error: 'Emoji is required' });
+  }
+
+  const message = messages.get(messageId);
+  if (!message || message.channelId !== channelId) {
+    return res.status(404).json({ error: 'Message not found' });
+  }
+
+  // Initialize reactions if not exists
+  if (!message.reactions) {
+    message.reactions = {};
+  }
+  if (!message.reactions[emoji]) {
+    message.reactions[emoji] = new Set();
+  }
+
+  // Add user reaction
+  message.reactions[emoji].add(req.user.id);
+
+  // Broadcast reaction update
+  broadcastToChannel(channelId, {
+    event: 'reaction',
+    data: {
+      messageId,
+      channelId,
+      emoji,
+      userId: req.user.id,
+      username: req.user.username,
+      userType: req.user.type,
+      action: 'add'
+    }
+  });
+
+  res.json({ success: true });
+});
+
+// Remove reaction from message
+app.delete('/channels/:channelId/messages/:messageId/reactions/:emoji', authenticate, (req, res) => {
+  const { channelId, messageId, emoji } = req.params;
+
+  const message = messages.get(messageId);
+  if (!message || message.channelId !== channelId) {
+    return res.status(404).json({ error: 'Message not found' });
+  }
+
+  if (message.reactions && message.reactions[emoji]) {
+    message.reactions[emoji].delete(req.user.id);
+    
+    // Remove emoji if no reactions left
+    if (message.reactions[emoji].size === 0) {
+      delete message.reactions[emoji];
+    }
+
+    // Broadcast reaction update
+    broadcastToChannel(channelId, {
+      event: 'reaction',
+      data: {
+        messageId,
+        channelId,
+        emoji,
+        userId: req.user.id,
+        username: req.user.username,
+        userType: req.user.type,
+        action: 'remove'
+      }
+    });
+  }
+
+  res.json({ success: true });
+});
 app.get('/dm/:userId', authenticate, (req, res) => {
   const targetId = req.params.userId;
   const limit = parseInt(req.query.limit) || 50;

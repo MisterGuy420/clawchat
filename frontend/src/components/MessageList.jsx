@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, User, Loader2 } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus } from 'lucide-react';
+
+const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '👏', '🔥', '😢', '🤔', '👎'];
 
 function formatTime(date) {
   const d = new Date(date);
@@ -78,7 +80,137 @@ function formatDate(date) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function MessageList({ messages, loading, currentUser }) {
+// Reaction picker popup
+function ReactionPicker({ isOpen, onSelect, onClose, position }) {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div 
+        className="fixed inset-0 z-40" 
+        onClick={onClose}
+      />
+      <div 
+        className="absolute z-50 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-2 flex gap-1"
+        style={{ 
+          bottom: position?.bottom || '100%',
+          left: position?.left || 0,
+          marginBottom: '8px'
+        }}
+      >
+        {COMMON_EMOJIS.map(emoji => (
+          <button
+            key={emoji}
+            onClick={() => onSelect(emoji)}
+            className="w-8 h-8 flex items-center justify-center text-lg hover:bg-gray-700 rounded transition-colors"
+            title={`React with ${emoji}`}
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// Single reaction badge
+function ReactionBadge({ emoji, users, currentUserId, onToggle }) {
+  const currentUserReacted = users.some(u => u.userId === currentUserId);
+  const tooltipText = users.length > 3 
+    ? `${users.slice(0, 3).map(u => u.username).join(', ')} and ${users.length - 3} others`
+    : users.map(u => u.username).join(', ');
+
+  return (
+    <button
+      onClick={() => onToggle(emoji)}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm transition-all ${
+        currentUserReacted 
+          ? 'bg-claw-600/30 border border-claw-500 hover:bg-claw-600/50' 
+          : 'bg-gray-700/50 border border-gray-600 hover:bg-gray-700'
+      }`}
+      title={tooltipText}
+    >
+      <span>{emoji}</span>
+      <span className={`text-xs ${currentUserReacted ? 'text-claw-300' : 'text-gray-400'}`}>
+        {users.length}
+      </span>
+    </button>
+  );
+}
+
+// Reactions bar for a message
+function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, onRemoveReaction }) {
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerPosition, setPickerPosition] = useState({});
+  const pickerRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  const handleToggle = (emoji) => {
+    const emojiReactions = reactions?.[emoji] || [];
+    const userReacted = emojiReactions.some(r => r.userId === currentUserId);
+    
+    if (userReacted) {
+      onRemoveReaction(messageId, emoji);
+    } else {
+      onAddReaction(messageId, emoji);
+    }
+  };
+
+  const handleOpenPicker = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const parentRect = buttonRef.current.closest('.message-row')?.getBoundingClientRect();
+      if (parentRect) {
+        setPickerPosition({
+          left: rect.left - parentRect.left,
+          bottom: '100%'
+        });
+      }
+    }
+    setShowPicker(true);
+  };
+
+  const handleSelectEmoji = (emoji) => {
+    handleToggle(emoji);
+    setShowPicker(false);
+  };
+
+  const hasReactions = reactions && Object.keys(reactions).length > 0;
+
+  return (
+    <div className="flex items-center gap-1 mt-1 flex-wrap">
+      {hasReactions && Object.entries(reactions).map(([emoji, users]) => (
+        <ReactionBadge
+          key={emoji}
+          emoji={emoji}
+          users={users}
+          currentUserId={currentUserId}
+          onToggle={handleToggle}
+        />
+      ))}
+      
+      <div className="relative" ref={pickerRef}>
+        <button
+          ref={buttonRef}
+          onClick={handleOpenPicker}
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm text-gray-500 hover:text-gray-300 hover:bg-gray-700/50 border border-transparent hover:border-gray-600 transition-all opacity-0 group-hover:opacity-100"
+          title="Add reaction"
+        >
+          <SmilePlus className="w-4 h-4" />
+        </button>
+        
+        <ReactionPicker
+          isOpen={showPicker}
+          onSelect={handleSelectEmoji}
+          onClose={() => setShowPicker(false)}
+          position={pickerPosition}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction }) {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -119,11 +251,12 @@ export default function MessageList({ messages, loading, currentUser }) {
               const prevMsg = idx > 0 ? dateMessages[idx - 1] : null;
               const isConsecutive = prevMsg && prevMsg.userId === msg.userId;
               const isMe = msg.userId === currentUser?.id;
+              const msgReactions = reactions?.[msg.id] || msg.reactions || {};
 
               return (
                 <div
                   key={msg.id}
-                  className={`flex gap-3 ${isConsecutive ? 'mt-0.5' : 'mt-4'}`}
+                  className={`message-row flex gap-3 group ${isConsecutive ? 'mt-0.5' : 'mt-4'}`}
                 >
                   {!isConsecutive ? (
                     <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
@@ -157,6 +290,14 @@ export default function MessageList({ messages, loading, currentUser }) {
                     <div className={`text-gray-100 break-words ${isConsecutive ? 'mt-0.5' : ''}`}>
                       {msg.content}
                     </div>
+                    
+                    <MessageReactions
+                      messageId={msg.id}
+                      reactions={msgReactions}
+                      currentUserId={currentUser?.id}
+                      onAddReaction={onAddReaction}
+                      onRemoveReaction={onRemoveReaction}
+                    />
                   </div>
                 </div>
               );
