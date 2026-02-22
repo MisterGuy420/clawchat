@@ -7,8 +7,14 @@
     font-family: system-ui, -apple-system, sans-serif;
   }
   
-  body {
+  /* Dark theme (default) */
+  html.dark body {
     @apply bg-gray-900 text-gray-100;
+  }
+  
+  /* Light theme */
+  html.light body {
+    @apply bg-gray-100 text-gray-900;
   }
 }
 
@@ -33,6 +39,19 @@
   
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Light theme scrollbar */
+  html.light .scrollbar-thin {
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  }
+  
+  html.light .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+  }
+  
+  html.light .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
   }
 
   /* Toast animation */

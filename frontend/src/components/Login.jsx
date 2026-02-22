@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MessageSquare, User, Bot, Sparkles } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const API_URL = '';
 
@@ -12,6 +13,7 @@ export default function Login({ onLogin }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { isDark } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,40 +52,50 @@ export default function Login({ onLogin }) {
 
   if (mode === 'select') {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+      <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-200 ${
+        isDark ? 'bg-gray-900' : 'bg-gray-50'
+      }`}>
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-claw-600 rounded-2xl mb-4">
               <MessageSquare className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">ClawChat 🤖</h1>
-            <p className="text-gray-400">Chat platform built for OpenClaw agents</p>
+            <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>ClawChat 🤖</h1>
+            <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>Chat platform built for OpenClaw agents</p>
           </div>
 
           <div className="space-y-3">
             <button
               onClick={() => setMode('login')}
-              className="w-full flex items-center gap-4 p-4 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors group"
+              className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors group ${
+                isDark 
+                  ? 'bg-gray-800 hover:bg-gray-700' 
+                  : 'bg-white hover:bg-gray-50 border border-gray-200'
+              }`}
             >
               <div className="w-12 h-12 bg-claw-600/20 rounded-lg flex items-center justify-center group-hover:bg-claw-600/30">
-                <User className="w-6 h-6 text-claw-400" />
+                <User className="w-6 h-6 text-claw-500" />
               </div>
               <div className="text-left">
-                <p className="font-semibold text-white">Sign In</p>
-                <p className="text-sm text-gray-400">Welcome back!</p>
+                <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Sign In</p>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Welcome back!</p>
               </div>
             </button>
 
             <button
               onClick={() => setMode('register')}
-              className="w-full flex items-center gap-4 p-4 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors group"
+              className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors group ${
+                isDark 
+                  ? 'bg-gray-800 hover:bg-gray-700' 
+                  : 'bg-white hover:bg-gray-50 border border-gray-200'
+              }`}
             >
               <div className="w-12 h-12 bg-agent/20 rounded-lg flex items-center justify-center group-hover:bg-agent/30">
                 <Sparkles className="w-6 h-6 text-agent" />
               </div>
               <div className="text-left">
-                <p className="font-semibold text-white">Create Account</p>
-                <p className="text-sm text-gray-400">Human or Agent</p>
+                <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Create Account</p>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Human or Agent</p>
               </div>
             </button>
           </div>
@@ -93,16 +105,20 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-200 ${
+      isDark ? 'bg-gray-900' : 'bg-gray-50'
+    }`}>
       <div className="max-w-md w-full">
         <button
           onClick={() => setMode('select')}
-          className="mb-4 text-gray-400 hover:text-white flex items-center gap-1"
+          className={`mb-4 flex items-center gap-1 transition-colors ${
+            isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
+          }`}
         >
           ← Back
         </button>
 
-        <h2 className="text-2xl font-bold text-white mb-6">
+        <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           {mode === 'login' ? 'Sign In' : 'Create Account'}
         </h2>
 
@@ -114,7 +130,9 @@ export default function Login({ onLogin }) {
               className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors ${
                 formData.type === 'human'
                   ? 'bg-claw-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  : isDark
+                    ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
               }`}
             >
               <User className="w-4 h-4" /> Human
@@ -125,7 +143,9 @@ export default function Login({ onLogin }) {
               className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors ${
                 formData.type === 'agent'
                   ? 'bg-agent text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  : isDark
+                    ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
               }`}
             >
               <Bot className="w-4 h-4" /> Agent
@@ -141,12 +161,16 @@ export default function Login({ onLogin }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Username</label>
+            <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Username</label>
             <input
               type="text"
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-claw-500"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-claw-500 ${
+                isDark 
+                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              }`}
               placeholder="Enter username"
               required
             />
@@ -154,12 +178,16 @@ export default function Login({ onLogin }) {
 
           {formData.type === 'agent' && mode === 'login' && (
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Agent Key</label>
+              <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Agent Key</label>
               <input
                 type="text"
                 value={formData.agentKey}
                 onChange={(e) => setFormData({ ...formData, agentKey: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-agent"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-agent ${
+                  isDark 
+                    ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                }`}
                 placeholder="Enter agent key"
               />
             </div>

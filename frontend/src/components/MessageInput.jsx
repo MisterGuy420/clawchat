@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperat
 import { Send, Smile, Paperclip, X, Image as ImageIcon, Keyboard } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useClipboard } from '../hooks/useClipboard';
+import { useTheme } from '../contexts/ThemeContext';
 import EmojiPicker from './EmojiPicker';
 
 const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emojiPickerOpen, setEmojiPickerOpen }, ref) {
@@ -11,6 +12,7 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
   const typingTimeoutRef = useRef(null);
   const { attachments, handlePaste, removeAttachment, clearAttachments, hasAttachments } = useClipboard();
   const fileInputRef = useRef(null);
+  const { isDark } = useTheme();
 
   // Expose focus method to parent via ref
   useImperativeHandle(ref, () => ({
@@ -133,14 +135,22 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
   };
 
   return (
-    <div className="p-4 bg-gray-800 border-t border-gray-700">
+    <div className={`p-4 border-t transition-colors duration-200 ${
+      isDark 
+        ? 'bg-gray-800 border-gray-700' 
+        : 'bg-white border-gray-200'
+    }`}>
       {/* Attachments preview */}
       {hasAttachments && (
         <div className="mb-3 flex flex-wrap gap-2">
           {attachments.map((attachment) => (
             <div
               key={attachment.id}
-              className="relative group bg-gray-700 rounded-lg overflow-hidden border border-gray-600"
+              className={`relative group rounded-lg overflow-hidden border ${
+                isDark 
+                  ? 'bg-gray-700 border-gray-600' 
+                  : 'bg-gray-100 border-gray-300'
+              }`}
             >
               <div className="w-20 h-20 flex items-center justify-center">
                 {attachment.previewUrl ? (
@@ -150,7 +160,7 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <ImageIcon className="w-8 h-8 text-gray-500" />
+                  <ImageIcon className={`w-8 h-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                 )}
               </div>
               <button
@@ -161,7 +171,9 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
               >
                 <X className="w-3 h-3" />
               </button>
-              <div className="absolute bottom-0 left-0 right-0 bg-gray-900/80 px-1 py-0.5">
+              <div className={`absolute bottom-0 left-0 right-0 px-1 py-0.5 ${
+                isDark ? 'bg-gray-900/80' : 'bg-gray-800/80'
+              }`}>
                 <span className="text-[10px] text-gray-300 truncate block">
                   {formatFileSize(attachment.size)}
                 </span>
@@ -172,7 +184,9 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
       )}
 
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <div className="flex-1 bg-gray-700 rounded-lg flex items-end">
+        <div className={`flex-1 rounded-lg flex items-end transition-colors duration-200 ${
+          isDark ? 'bg-gray-700' : 'bg-gray-100'
+        }`}>
           <textarea
             ref={textareaRef}
             value={message}
@@ -182,7 +196,11 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
             onPaste={handlePaste}
             placeholder="Type a message... (paste images directly)"
             rows={1}
-            className="flex-1 bg-transparent px-4 py-3 text-white placeholder-gray-500 resize-none focus:outline-none max-h-32"
+            className={`flex-1 bg-transparent px-4 py-3 resize-none focus:outline-none max-h-32 ${
+              isDark 
+                ? 'text-white placeholder-gray-500' 
+                : 'text-gray-900 placeholder-gray-400'
+            }`}
             style={{ minHeight: '48px' }}
           />
           <div className="flex items-center gap-1 p-2">
@@ -197,7 +215,11 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 text-gray-500 hover:text-gray-300 hover:bg-gray-600 rounded-lg transition-colors"
+              className={`p-2 rounded-lg transition-colors ${
+                isDark 
+                  ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+              }`}
               title="Attach file"
             >
               <Paperclip className="w-5 h-5" />
@@ -209,7 +231,9 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
                 className={`p-2 rounded-lg transition-colors ${
                   emojiPickerOpen 
                     ? 'text-claw-400 bg-claw-500/20' 
-                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-600'
+                    : isDark
+                      ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
                 }`}
                 title="Add emoji (Ctrl+E)"
               >
@@ -233,7 +257,9 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
         </button>
       </form>
 
-      <div className="mt-2 text-xs text-gray-500 text-center flex items-center justify-center gap-2">
+      <div className={`mt-2 text-xs text-center flex items-center justify-center gap-2 ${
+        isDark ? 'text-gray-500' : 'text-gray-400'
+      }`}>
         <span>Press Enter to send, Shift+Enter for new line • Paste images directly</span>
         <button
           type="button"

@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Hash, Users, Wifi, WifiOff, Keyboard, Search, X, Volume2, VolumeX } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function ChannelHeader({ channel, connected, userCount, onShowShortcuts, onSearch, searchQuery, isSearching, soundEnabled, onToggleSound }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [localQuery, setLocalQuery] = useState(searchQuery || '');
   const inputRef = useRef(null);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     if (isSearchOpen && inputRef.current) {
@@ -54,15 +57,21 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
   };
 
   return (
-    <div className="h-14 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4">
+    <div className={`h-14 border-b flex items-center justify-between px-4 transition-colors duration-200 ${
+      isDark 
+        ? 'bg-gray-800 border-gray-700' 
+        : 'bg-white border-gray-200'
+    }`}>
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-          <Hash className="w-4 h-4 text-gray-400" />
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+          isDark ? 'bg-gray-700' : 'bg-gray-100'
+        }`}>
+          <Hash className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
         </div>
         <div>
-          <h2 className="font-bold text-white">{channel.name}</h2>
+          <h2 className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{channel.name}</h2>
           {channel.description && !isSearchOpen && (
-            <p className="text-xs text-gray-400">{channel.description}</p>
+            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{channel.description}</p>
           )}
         </div>
       </div>
@@ -72,7 +81,7 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
         {isSearchOpen ? (
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <div className="relative">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
               <input
                 ref={inputRef}
                 type="text"
@@ -80,13 +89,21 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
                 onChange={(e) => setLocalQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Search messages..."
-                className="w-64 pl-9 pr-8 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-claw-500"
+                className={`w-64 pl-9 pr-8 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-claw-500 ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'
+                }`}
               />
               {localQuery && (
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-white hover:bg-gray-600 rounded"
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded ${
+                    isDark 
+                      ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-300'
+                  }`}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -95,7 +112,11 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
             <button
               type="button"
               onClick={handleSearchToggle}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+              className={`p-1.5 rounded transition-colors ${
+                isDark 
+                  ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
+              }`}
               title="Close search (Esc)"
             >
               <X className="w-4 h-4" />
@@ -104,7 +125,11 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
         ) : (
           <button
             onClick={handleSearchToggle}
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+            className={`p-2 rounded-lg transition-colors ${
+              isDark 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
+            }`}
             title="Search messages (Ctrl+K)"
           >
             <Search className="w-4 h-4" />
@@ -113,26 +138,38 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
 
         <button
           onClick={onShowShortcuts}
-          className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+          className={`p-2 rounded-lg transition-colors ${
+            isDark 
+              ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
+          }`}
           title="Keyboard shortcuts (Ctrl+/)"
         >
           <Keyboard className="w-4 h-4" />
         </button>
+
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
         <button
           onClick={onToggleSound}
           className={`p-2 rounded-lg transition-colors ${
             soundEnabled 
               ? 'text-claw-400 hover:bg-claw-500/20' 
-              : 'text-gray-400 hover:text-white hover:bg-gray-700'
+              : isDark
+                ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
           }`}
           title={soundEnabled ? 'Mute notifications' : 'Enable notifications'}
         >
           {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
         </button>
-        <div className="flex items-center gap-2 text-gray-400">
+
+        <div className={`flex items-center gap-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
           <Users className="w-4 h-4" />
           <span className="text-sm">{userCount} online</span>
         </div>
+
         <div className={`flex items-center gap-1 ${connected ? 'text-green-500' : 'text-red-500'}`}>
           {connected ? (
             <>

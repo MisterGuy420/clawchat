@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Command, CornerDownLeft, ArrowUp, ArrowDown, Slash, Smile, Edit3, Trash2, Search } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const SHORTCUTS = [
   { keys: ['Ctrl', 'K'], description: 'Focus message input', icon: CornerDownLeft },
@@ -88,6 +89,7 @@ export function useKeyboardShortcuts({
 
 export function KeyboardShortcutsHelp({ isOpen, onClose }) {
   const [isMac, setIsMac] = useState(false);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
@@ -116,18 +118,24 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-xl shadow-2xl w-full max-w-md animate-slideIn">
+      <div className={`rounded-xl shadow-2xl w-full max-w-md animate-slideIn ${
+        isDark ? 'bg-gray-800' : 'bg-white'
+      }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className={`flex items-center justify-between p-4 border-b ${
+          isDark ? 'border-gray-700' : 'border-gray-200'
+        }`}>
           <div className="flex items-center gap-2">
-            <Command className="w-5 h-5 text-claw-400" />
-            <h2 className="text-lg font-bold text-white">Keyboard Shortcuts</h2>
+            <Command className="w-5 h-5 text-claw-500" />
+            <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Keyboard Shortcuts</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
+            className={`p-1 rounded-lg transition-colors ${
+              isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+            }`}
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className={`w-5 h-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
           </button>
         </div>
 
@@ -136,20 +144,28 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }) {
           {SHORTCUTS.map((shortcut, idx) => (
             <div
               key={idx}
-              className="flex items-center justify-between py-2 px-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors"
+              className={`flex items-center justify-between py-2 px-3 rounded-lg transition-colors ${
+                isDark 
+                  ? 'bg-gray-700/50 hover:bg-gray-700' 
+                  : 'bg-gray-50 hover:bg-gray-100'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <shortcut.icon className="w-4 h-4 text-gray-500" />
-                <span className="text-gray-200 text-sm">{shortcut.description}</span>
+                <shortcut.icon className={`w-4 h-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                <span className={`text-sm ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{shortcut.description}</span>
               </div>
               <div className="flex items-center gap-1">
                 {shortcut.keys.map((key, keyIdx) => (
                   <React.Fragment key={keyIdx}>
-                    <kbd className="px-2 py-1 bg-gray-800 border border-gray-600 rounded text-xs font-mono text-gray-300 min-w-[24px] text-center">
+                    <kbd className={`px-2 py-1 border rounded text-xs font-mono min-w-[24px] text-center ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-600 text-gray-300' 
+                        : 'bg-white border-gray-300 text-gray-700'
+                    }`}>
                       {formatKey(key)}
                     </kbd>
                     {keyIdx < shortcut.keys.length - 1 && (
-                      <span className="text-gray-500 mx-0.5">+</span>
+                      <span className={`mx-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>+</span>
                     )}
                   </React.Fragment>
                 ))}
@@ -159,9 +175,17 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 bg-gray-900/50 border-t border-gray-700 rounded-b-xl">
-          <p className="text-xs text-gray-500 text-center">
-            Press <kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-600 rounded text-xs font-mono">Esc</kbd> to close
+        <div className={`px-4 py-3 border-t rounded-b-xl ${
+          isDark 
+            ? 'bg-gray-900/50 border-gray-700' 
+            : 'bg-gray-50 border-gray-200'
+        }`}>
+          <p className={`text-xs text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+            Press <kbd className={`px-1.5 py-0.5 border rounded text-xs font-mono ${
+              isDark 
+                ? 'bg-gray-800 border-gray-600' 
+                : 'bg-white border-gray-300'
+            }`}>Esc</kbd> to close
           </p>
         </div>
       </div>

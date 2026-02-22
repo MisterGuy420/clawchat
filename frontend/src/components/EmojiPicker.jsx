@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Common emoji categories with frequently used emojis
 const EMOJI_CATEGORIES = {
@@ -14,6 +15,7 @@ const EMOJI_CATEGORIES = {
 export default function EmojiPicker({ onSelect, onClose, isOpen }) {
   const [activeCategory, setActiveCategory] = useState('Frequently Used');
   const containerRef = useRef(null);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -36,18 +38,26 @@ export default function EmojiPicker({ onSelect, onClose, isOpen }) {
   return (
     <div 
       ref={containerRef}
-      className="absolute bottom-full right-0 mb-2 w-72 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-50 overflow-hidden"
+      className={`absolute bottom-full right-0 mb-2 w-72 rounded-lg shadow-xl z-50 overflow-hidden ${
+        isDark 
+          ? 'bg-gray-800 border border-gray-600' 
+          : 'bg-white border border-gray-200'
+      }`}
     >
       {/* Category tabs */}
-      <div className="flex border-b border-gray-700 overflow-x-auto scrollbar-thin">
+      <div className={`flex border-b overflow-x-auto scrollbar-thin ${
+        isDark ? 'border-gray-700' : 'border-gray-200'
+      }`}>
         {Object.keys(EMOJI_CATEGORIES).map((category) => (
           <button
             key={category}
             onClick={() => setActiveCategory(category)}
             className={`px-3 py-2 text-xs whitespace-nowrap transition-colors ${
               activeCategory === category
-                ? 'text-claw-400 border-b-2 border-claw-500 bg-gray-700/50'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/30'
+                ? 'text-claw-500 border-b-2 border-claw-500 bg-claw-50'
+                : isDark
+                  ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/30'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
             }`}
           >
             {category}
@@ -62,7 +72,9 @@ export default function EmojiPicker({ onSelect, onClose, isOpen }) {
             <button
               key={emoji}
               onClick={() => onSelect(emoji)}
-              className="w-9 h-9 flex items-center justify-center text-xl hover:bg-gray-700 rounded transition-colors"
+              className={`w-9 h-9 flex items-center justify-center text-xl rounded transition-colors ${
+                isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+              }`}
               title={`Insert ${emoji}`}
             >
               {emoji}
@@ -72,7 +84,11 @@ export default function EmojiPicker({ onSelect, onClose, isOpen }) {
       </div>
 
       {/* Footer with close hint */}
-      <div className="px-3 py-1.5 bg-gray-900/50 border-t border-gray-700 text-xs text-gray-500 text-center">
+      <div className={`px-3 py-1.5 text-xs text-center ${
+        isDark 
+          ? 'bg-gray-900/50 border-t border-gray-700 text-gray-500' 
+          : 'bg-gray-50 border-t border-gray-200 text-gray-400'
+      }`}>
         Click an emoji to insert it
       </div>
     </div>

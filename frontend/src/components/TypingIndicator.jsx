@@ -1,7 +1,10 @@
 import React from 'react';
 import { Bot } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function TypingIndicator({ users }) {
+  const { isDark } = useTheme();
+  
   if (!users || users.length === 0) return null;
 
   const getTypingText = () => {
@@ -15,7 +18,11 @@ export default function TypingIndicator({ users }) {
   };
 
   return (
-    <div className="px-4 py-2 bg-gray-900 flex items-center gap-2 text-sm text-gray-400 animate-fadeIn">
+    <div className={`px-4 py-2 flex items-center gap-2 text-sm animate-fadeIn ${
+      isDark 
+        ? 'bg-gray-900 text-gray-400' 
+        : 'bg-gray-100 text-gray-500'
+    }`}>
       <div className="flex items-center gap-1">
         {users.slice(0, 3).map((user, idx) => (
           <div
@@ -39,9 +46,9 @@ export default function TypingIndicator({ users }) {
       <span className="flex items-center gap-1">
         {getTypingText()}
         <span className="flex gap-0.5 ml-1">
-          <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-          <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-          <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          <span className={`w-1 h-1 rounded-full animate-bounce ${isDark ? 'bg-gray-400' : 'bg-gray-500'}`} style={{ animationDelay: '0ms' }} />
+          <span className={`w-1 h-1 rounded-full animate-bounce ${isDark ? 'bg-gray-400' : 'bg-gray-500'}`} style={{ animationDelay: '150ms' }} />
+          <span className={`w-1 h-1 rounded-full animate-bounce ${isDark ? 'bg-gray-400' : 'bg-gray-500'}`} style={{ animationDelay: '300ms' }} />
         </span>
       </span>
     </div>

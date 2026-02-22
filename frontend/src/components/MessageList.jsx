@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 import LinkifiedText from './LinkifiedText';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '👏', '🔥', '😢', '🤔', '👎'];
@@ -82,7 +83,7 @@ function formatDate(date) {
 }
 
 // Reaction picker popup
-function ReactionPicker({ isOpen, onSelect, onClose, position }) {
+function ReactionPicker({ isOpen, onSelect, onClose, position, isDark }) {
   if (!isOpen) return null;
 
   return (
@@ -92,7 +93,11 @@ function ReactionPicker({ isOpen, onSelect, onClose, position }) {
         onClick={onClose}
       />
       <div 
-        className="absolute z-50 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-2 flex gap-1"
+        className={`absolute z-50 border rounded-lg shadow-xl p-2 flex gap-1 ${
+          isDark 
+            ? 'bg-gray-800 border-gray-600' 
+            : 'bg-white border-gray-300'
+        }`}
         style={{ 
           bottom: position?.bottom || '100%',
           left: position?.left || 0,
@@ -103,7 +108,9 @@ function ReactionPicker({ isOpen, onSelect, onClose, position }) {
           <button
             key={emoji}
             onClick={() => onSelect(emoji)}
-            className="w-8 h-8 flex items-center justify-center text-lg hover:bg-gray-700 rounded transition-colors"
+            className={`w-8 h-8 flex items-center justify-center text-lg rounded transition-colors ${
+              isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+            }`}
             title={`React with ${emoji}`}
           >
             {emoji}
@@ -115,7 +122,7 @@ function ReactionPicker({ isOpen, onSelect, onClose, position }) {
 }
 
 // Single reaction badge
-function ReactionBadge({ emoji, users, currentUserId, onToggle }) {
+function ReactionBadge({ emoji, users, currentUserId, onToggle, isDark }) {
   const currentUserReacted = users.some(u => u.userId === currentUserId);
   const tooltipText = users.length > 3 
     ? `${users.slice(0, 3).map(u => u.username).join(', ')} and ${users.length - 3} others`
@@ -127,12 +134,14 @@ function ReactionBadge({ emoji, users, currentUserId, onToggle }) {
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm transition-all ${
         currentUserReacted 
           ? 'bg-claw-600/30 border border-claw-500 hover:bg-claw-600/50' 
-          : 'bg-gray-700/50 border border-gray-600 hover:bg-gray-700'
+          : isDark
+            ? 'bg-gray-700/50 border border-gray-600 hover:bg-gray-700'
+            : 'bg-gray-200/50 border border-gray-300 hover:bg-gray-200'
       }`}
       title={tooltipText}
     >
       <span>{emoji}</span>
-      <span className={`text-xs ${currentUserReacted ? 'text-claw-300' : 'text-gray-400'}`}>
+      <span className={`text-xs ${currentUserReacted ? 'text-claw-300' : isDark ? 'text-gray-400' : 'text-gray-500'}`}>
         {users.length}
       </span>
     </button>
@@ -140,7 +149,7 @@ function ReactionBadge({ emoji, users, currentUserId, onToggle }) {
 }
 
 // Reactions bar for a message
-function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, onRemoveReaction }) {
+function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, onRemoveReaction, isDark }) {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerPosition, setPickerPosition] = useState({});
   const pickerRef = useRef(null);
@@ -187,6 +196,7 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
           users={users}
           currentUserId={currentUserId}
           onToggle={handleToggle}
+          isDark={isDark}
         />
       ))}
       
@@ -194,7 +204,11 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
         <button
           ref={buttonRef}
           onClick={handleOpenPicker}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm text-gray-500 hover:text-gray-300 hover:bg-gray-700/50 border border-transparent hover:border-gray-600 transition-all opacity-0 group-hover:opacity-100"
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm border border-transparent transition-all opacity-0 group-hover:opacity-100 ${
+            isDark 
+              ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-700/50 hover:border-gray-600' 
+              : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200/50 hover:border-gray-300'
+          }`}
           title="Add reaction"
         >
           <SmilePlus className="w-4 h-4" />
@@ -205,6 +219,7 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
           onSelect={handleSelectEmoji}
           onClose={() => setShowPicker(false)}
           position={pickerPosition}
+          isDark={isDark}
         />
       </div>
     </div>
@@ -212,7 +227,7 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
 }
 
 // Message edit form
-function MessageEditForm({ content, onSave, onCancel }) {
+function MessageEditForm({ content, onSave, onCancel, isDark }) {
   const [editContent, setEditContent] = useState(content);
   const textareaRef = useRef(null);
 
@@ -251,7 +266,11 @@ function MessageEditForm({ content, onSave, onCancel }) {
         value={editContent}
         onChange={(e) => setEditContent(e.target.value)}
         onKeyDown={handleKeyDown}
-        className="w-full bg-gray-800 border border-claw-500 rounded-lg px-3 py-2 text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-claw-500"
+        className={`w-full border border-claw-500 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-claw-500 ${
+          isDark 
+            ? 'bg-gray-800 text-gray-100' 
+            : 'bg-white text-gray-900 border-gray-300'
+        }`}
         rows={Math.min(5, editContent.split('\n').length + 1)}
         style={{ minHeight: '40px' }}
       />
@@ -265,12 +284,16 @@ function MessageEditForm({ content, onSave, onCancel }) {
         </button>
         <button
           onClick={onCancel}
-          className="flex items-center gap-1 px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded transition-colors"
+          className={`flex items-center gap-1 px-3 py-1 text-sm rounded transition-colors ${
+            isDark 
+              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+          }`}
         >
           <X className="w-3.5 h-3.5" />
           Cancel
         </button>
-        <span className="text-xs text-gray-500 ml-2">
+        <span className={`text-xs ml-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
           Press Enter to save, Escape to cancel
         </span>
       </div>
@@ -287,6 +310,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
   const [newMessageCount, setNewMessageCount] = useState(0);
   const lastMessageCountRef = useRef(messages.length);
   const isScrolledRef = useRef(false);
+  const { isDark } = useTheme();
 
   // Check scroll position and show/hide jump button
   const handleScroll = () => {
@@ -370,7 +394,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className={`flex-1 flex items-center justify-center ${isDark ? '' : 'bg-gray-100'}`}>
         <Loader2 className="w-8 h-8 text-claw-500 animate-spin" />
       </div>
     );
@@ -385,13 +409,15 @@ export default function MessageList({ messages, loading, currentUser, reactions,
   }, {});
 
   return (
-    <div ref={containerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto scrollbar-thin p-4 relative">
+    <div ref={containerRef} onScroll={handleScroll} className={`flex-1 overflow-y-auto scrollbar-thin p-4 relative ${
+      isDark ? '' : 'bg-gray-100'
+    }`}>
       {Object.entries(groupedMessages).map(([date, dateMessages]) => (
         <div key={date}>
           <div className="flex items-center justify-center my-4">
-            <div className="h-px bg-gray-700 flex-1" />
-            <span className="mx-4 text-xs text-gray-500">{formatDate(dateMessages[0].timestamp)}</span>
-            <div className="h-px bg-gray-700 flex-1" />
+            <div className={`h-px flex-1 ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
+            <span className={`mx-4 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(dateMessages[0].timestamp)}</span>
+            <div className={`h-px flex-1 ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
           </div>
 
           <div className="space-y-1">
@@ -425,17 +451,19 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                     {!isConsecutive && (
                       <div className="flex items-baseline gap-2">
                         <span className={`font-semibold text-sm ${
-                          msg.userType === 'agent' ? 'text-agent' : 'text-claw-400'
+                          msg.userType === 'agent' ? 'text-agent' : 'text-claw-500'
                         }`}>
                           {msg.username}
                         </span>
                         <TimestampTooltip timestamp={msg.timestamp}>
-                          <span className="text-xs text-gray-500 hover:text-gray-400 transition-colors">
+                          <span className={`text-xs hover:transition-colors ${
+                            isDark ? 'text-gray-500 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'
+                          }`}>
                             {formatTime(msg.timestamp)}
                           </span>
                         </TimestampTooltip>
                         {msg.edited && (
-                          <span className="text-xs text-gray-500 italic" title={msg.editedAt ? formatFullTimestamp(msg.editedAt) : 'Edited'}>
+                          <span className={`text-xs italic ${isDark ? 'text-gray-500' : 'text-gray-400'}`} title={msg.editedAt ? formatFullTimestamp(msg.editedAt) : 'Edited'}>
                             (edited)
                           </span>
                         )}
@@ -443,14 +471,22 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                           <>
                             <button
                               onClick={() => handleEditStart(msg.id)}
-                              className="ml-1 p-1 text-gray-600 hover:text-claw-400 hover:bg-claw-500/10 rounded transition-all opacity-0 group-hover:opacity-100"
+                              className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
+                                isDark 
+                                  ? 'text-gray-600 hover:text-claw-400 hover:bg-claw-500/10' 
+                                  : 'text-gray-400 hover:text-claw-500 hover:bg-claw-500/10'
+                              }`}
                               title="Edit message"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => onDeleteMessage && onDeleteMessage(msg.id)}
-                              className="ml-1 p-1 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded transition-all opacity-0 group-hover:opacity-100"
+                              className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
+                                isDark 
+                                  ? 'text-gray-600 hover:text-red-400 hover:bg-red-500/10' 
+                                  : 'text-gray-400 hover:text-red-500 hover:bg-red-500/10'
+                              }`}
                               title="Delete message"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -466,12 +502,15 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                           content={msg.content}
                           onSave={(newContent) => handleEditSave(msg.id, newContent)}
                           onCancel={handleEditCancel}
+                          isDark={isDark}
                         />
                       </div>
                     ) : (
                       <>
                         <div className={`break-words ${isConsecutive ? 'mt-0.5' : ''} ${
-                          msg.deleted ? 'text-gray-500 italic text-sm' : 'text-gray-100'
+                          msg.deleted 
+                            ? isDark ? 'text-gray-500 italic text-sm' : 'text-gray-400 italic text-sm'
+                            : isDark ? 'text-gray-100' : 'text-gray-900'
                         }`}>
                           {msg.deleted ? msg.content : <LinkifiedText text={msg.content} />}
                         </div>
@@ -483,6 +522,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             currentUserId={currentUser?.id}
                             onAddReaction={onAddReaction}
                             onRemoveReaction={onRemoveReaction}
+                            isDark={isDark}
                           />
                         )}
                       </>
@@ -496,17 +536,17 @@ export default function MessageList({ messages, loading, currentUser, reactions,
       ))}
 
       {messages.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+        <div className={`flex flex-col items-center justify-center h-full ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
           {isSearching ? (
             <>
               <Search className="w-12 h-12 mb-4 opacity-50" />
-              <p className="text-lg">No messages found</p>
+              <p className={`text-lg ${isDark ? '' : 'text-gray-600'}`}>No messages found</p>
               <p className="text-sm">No results for "{searchQuery}"</p>
             </>
           ) : (
             <>
               <Bot className="w-12 h-12 mb-4 opacity-50" />
-              <p className="text-lg">No messages yet</p>
+              <p className={`text-lg ${isDark ? '' : 'text-gray-600'}`}>No messages yet</p>
               <p className="text-sm">Be the first to say something!</p>
             </>
           )}
@@ -532,15 +572,15 @@ export default function MessageList({ messages, loading, currentUser, reactions,
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className={`font-semibold text-sm ${
-                    msg.userType === 'agent' ? 'text-agent' : 'text-claw-400'
+                    msg.userType === 'agent' ? 'text-agent' : 'text-claw-500'
                   }`}>
                     {msg.username}
                   </span>
-                  <span className="text-xs text-gray-500">{formatTime(msg.timestamp)}</span>
-                  <span className="text-xs text-gray-500 italic">(sending...)</span>
-                  <Loader2 className="w-3 h-3 text-gray-500 animate-spin" />
+                  <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{formatTime(msg.timestamp)}</span>
+                  <span className={`text-xs italic ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>(sending...)</span>
+                  <Loader2 className={`w-3 h-3 animate-spin ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                 </div>
-                <div className="text-gray-300 break-words">
+                <div className={`break-words ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   <LinkifiedText text={msg.content} />
                 </div>
               </div>
@@ -566,17 +606,17 @@ export default function MessageList({ messages, loading, currentUser, reactions,
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className={`font-semibold text-sm ${
-                    msg.userType === 'agent' ? 'text-agent' : 'text-claw-400'
+                    msg.userType === 'agent' ? 'text-agent' : 'text-claw-500'
                   }`}>
                     {msg.username}
                   </span>
-                  <span className="text-xs text-gray-500">{formatTime(msg.timestamp)}</span>
+                  <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{formatTime(msg.timestamp)}</span>
                   <span className="text-xs text-red-400 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     Failed to send
                   </span>
                 </div>
-                <div className="text-gray-300 break-words">
+                <div className={`break-words ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   <LinkifiedText text={msg.content} />
                 </div>
                 <div className="flex items-center gap-2 mt-1">
@@ -589,7 +629,11 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                   </button>
                   <button
                     onClick={() => onCancelFailedMessage && onCancelFailedMessage(msg.id)}
-                    className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded transition-colors"
+                    className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
+                      isDark 
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    }`}
                   >
                     <X className="w-3 h-3" />
                     Dismiss

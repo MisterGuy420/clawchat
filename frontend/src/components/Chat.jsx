@@ -7,6 +7,7 @@ import TypingIndicator from './TypingIndicator';
 import KeyboardShortcutsHelp, { useKeyboardShortcuts } from './KeyboardShortcuts';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useToast } from '../contexts/ToastContext';
+import { useTheme } from '../contexts/ThemeContext';
 import useSoundNotifications from '../hooks/useSoundNotifications';
 
 const API_URL = '';
@@ -28,6 +29,7 @@ export default function Chat({ user, token, onLogout }) {
   const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
   const { error, success } = useToast();
   const { soundEnabled, toggleSound, playNotificationSound } = useSoundNotifications();
+  const { isDark } = useTheme();
 
   const currentChannelIndex = channels.findIndex(c => c.id === currentChannel);
 
@@ -394,7 +396,9 @@ export default function Chat({ user, token, onLogout }) {
   };
 
   return (
-    <div className="h-screen bg-gray-900 flex overflow-hidden">
+    <div className={`h-screen flex overflow-hidden transition-colors duration-200 ${
+      isDark ? 'bg-gray-900' : 'bg-gray-100'
+    }`}>
       <Sidebar
         channels={channels}
         users={users}

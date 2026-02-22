@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { useTheme } from './ThemeContext';
 
 const ToastContext = createContext(null);
 
@@ -72,31 +73,43 @@ function ToastContainer({ toasts, onRemove }) {
 }
 
 function ToastItem({ toast, onRemove }) {
+  const { isDark } = useTheme();
+  
   const icons = {
-    success: <CheckCircle className="w-5 h-5 text-green-400" />,
-    error: <AlertCircle className="w-5 h-5 text-red-400" />,
-    info: <Info className="w-5 h-5 text-blue-400" />
+    success: <CheckCircle className="w-5 h-5 text-green-500" />,
+    error: <AlertCircle className="w-5 h-5 text-red-500" />,
+    info: <Info className="w-5 h-5 text-blue-500" />
   };
 
-  const styles = {
-    success: 'border-green-500/30 bg-gray-800',
-    error: 'border-red-500/30 bg-gray-800',
-    info: 'border-blue-500/30 bg-gray-800'
+  const getStyles = (type) => {
+    const borderColors = {
+      success: 'border-green-500/30',
+      error: 'border-red-500/30',
+      info: 'border-blue-500/30'
+    };
+    
+    const bgColors = isDark 
+      ? 'bg-gray-800'
+      : 'bg-white';
+    
+    return `${borderColors[type]} ${bgColors}`;
   };
 
   return (
     <div
-      className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${styles[toast.type]} min-w-[300px] max-w-md animate-slideIn`}
+      className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${getStyles(toast.type)} min-w-[300px] max-w-md animate-slideIn`}
       role="alert"
     >
       {icons[toast.type]}
-      <p className="flex-1 text-sm text-gray-100">{toast.message}</p>
+      <p className={`flex-1 text-sm ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>{toast.message}</p>
       <button
         onClick={() => onRemove(toast.id)}
-        className="p-1 hover:bg-gray-700 rounded transition-colors"
+        className={`p-1 rounded transition-colors ${
+          isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+        }`}
         aria-label="Dismiss"
       >
-        <X className="w-4 h-4 text-gray-400" />
+        <X className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
       </button>
     </div>
   );
