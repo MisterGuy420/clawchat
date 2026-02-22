@@ -4,8 +4,10 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import { useClipboard } from '../hooks/useClipboard';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMentions } from '../hooks/useMentions';
+import { useEmojiAutocomplete } from '../hooks/useEmojiAutocomplete';
 import EmojiPicker from './EmojiPicker';
 import MentionDropdown from './MentionDropdown';
+import EmojiAutocomplete from './EmojiAutocomplete';
 
 const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emojiPickerOpen, setEmojiPickerOpen, users = [], replyTo, onCancelReply }, ref) {
   const [message, setMessage] = useState('');
@@ -26,6 +28,16 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
     inputRef: mentionInputRef
   } = useMentions(users);
 
+  // Emoji autocomplete
+  const {
+    emojiState,
+    handleEmojiInputChange,
+    handleEmojiKeyDown,
+    selectEmoji,
+    closeEmojiAutocomplete,
+    emojiInputRef
+  } = useEmojiAutocomplete();
+
   // Expose focus method to parent via ref
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -36,7 +48,8 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
   // Sync refs
   useEffect(() => {
     mentionInputRef.current = textareaRef.current;
-  }, [mentionInputRef]);
+    emojiInputRef.current = textareaRef.current;
+  }, [mentionInputRef, emojiInputRef]);
 
   const handleTyping = useCallback(() => {
     if (!channelId) return;
@@ -82,7 +95,15 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
   };
 
   const handleKeyDown = (e) => {
-    // Handle mention navigation first
+    // Handle emoji autocomplete first (if open)
+    if (emojiState.isOpen) {
+      const handledByEmoji = handleEmojiKeyDown(e, message, (newValue) => {
+        setMessage(newValue);
+      });
+      if (handledByEmoji) return;
+    }
+    
+    // Handle mention navigation
     const handledByMention = handleMentionKeyDown(e, message, (newValue) => {
       setMessage(newValue);
     });
@@ -105,13 +126,27 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
     const newValue = e.target.value;
     const cursorPosition = e.target.selectionStart;
     setMessage(newValue);
-    handleInputChange(newValue, cursorPosition);
+    
+    // Only trigger one autocomplete at a time (mentions take priority)
+    if (!emojiState.isOpen) {
+      handleInputChange(newValue, cursorPosition);
+    }
+    if (!mentionState.isOpen) {
+      handleEmojiInputChange(newValue, cursorPosition);
+    }
+    
     handleTyping();
   };
 
   const handleSelectMention = (user) => {
     const newValue = selectMention(user, message);
     setMessage(newValue);
+  };
+
+  const handleSelectEmojiAutocomplete = (emojiItem) => {
+    const newValue = selectEmoji(emojiItem, message);
+    setMessage(newValue);
+    handleTyping();
   };
 
   const insertAtSymbol = () => {
@@ -361,12 +396,21 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
           onSelect={handleSelectMention}
           position={{ bottom: '100%', left: '56px' }}
         />
+
+        {/* Emoji Autocomplete Dropdown */}
+        <EmojiAutocomplete
+          isOpen={emojiState.isOpen}
+          emojis={emojiState.filteredEmojis}
+          selectedIndex={emojiState.selectedIndex}
+          onSelect={handleSelectEmojiAutocomplete}
+          position={{ bottom: '100%', left: '56px' }}
+        />
       </form>
 
       <div className={`mt-2 text-xs text-center flex items-center justify-center gap-2 ${
         isDark ? 'text-gray-500' : 'text-gray-400'
       }`}>
-        <span>Enter to send • Shift+Enter for new line • @ to mention • **bold** • `code`</span>
+        <span>Enter to send • Shift+Enter for new line • @ to mention • : for emoji • **bold** • `code`</span>
         <button
           type="button"
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: true }))}
