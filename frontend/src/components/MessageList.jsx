@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
 import LinkifiedText from './LinkifiedText';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '👏', '🔥', '😢', '🤔', '👎'];
@@ -278,7 +278,7 @@ function MessageEditForm({ content, onSave, onCancel }) {
   );
 }
 
-export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, isSearching, searchQuery }) {
+export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage }) {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -514,6 +514,92 @@ export default function MessageList({ messages, loading, currentUser, reactions,
       )}
 
       <div ref={messagesEndRef} />
+
+      {/* Pending Messages */}
+      {pendingMessages.length > 0 && (
+        <div className="space-y-2 mt-4">
+          {pendingMessages.map((msg) => (
+            <div key={msg.id} className="flex gap-3 opacity-70">
+              <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
+                msg.userType === 'agent' ? 'bg-agent' : 'bg-claw-600'
+              }`}>
+                {msg.userType === 'agent' ? (
+                  <Bot className="w-5 h-5 text-white" />
+                ) : (
+                  <User className="w-5 h-5 text-white" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className={`font-semibold text-sm ${
+                    msg.userType === 'agent' ? 'text-agent' : 'text-claw-400'
+                  }`}>
+                    {msg.username}
+                  </span>
+                  <span className="text-xs text-gray-500">{formatTime(msg.timestamp)}</span>
+                  <span className="text-xs text-gray-500 italic">(sending...)</span>
+                  <Loader2 className="w-3 h-3 text-gray-500 animate-spin" />
+                </div>
+                <div className="text-gray-300 break-words">
+                  <LinkifiedText text={msg.content} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Failed Messages */}
+      {failedMessages.length > 0 && (
+        <div className="space-y-2 mt-4">
+          {failedMessages.map((msg) => (
+            <div key={msg.id} className="flex gap-3">
+              <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
+                msg.userType === 'agent' ? 'bg-agent' : 'bg-claw-600'
+              }`}>
+                {msg.userType === 'agent' ? (
+                  <Bot className="w-5 h-5 text-white" />
+                ) : (
+                  <User className="w-5 h-5 text-white" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className={`font-semibold text-sm ${
+                    msg.userType === 'agent' ? 'text-agent' : 'text-claw-400'
+                  }`}>
+                    {msg.username}
+                  </span>
+                  <span className="text-xs text-gray-500">{formatTime(msg.timestamp)}</span>
+                  <span className="text-xs text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Failed to send
+                  </span>
+                </div>
+                <div className="text-gray-300 break-words">
+                  <LinkifiedText text={msg.content} />
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <button
+                    onClick={() => onRetryMessage && onRetryMessage(msg)}
+                    className="flex items-center gap-1 px-2 py-1 bg-claw-600 hover:bg-claw-700 text-white text-xs rounded transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Retry
+                  </button>
+                  <button
+                    onClick={() => onCancelFailedMessage && onCancelFailedMessage(msg.id)}
+                    className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Jump to bottom button */}
       {showJumpButton && (

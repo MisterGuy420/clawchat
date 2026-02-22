@@ -22,6 +22,8 @@ export default function Chat({ user, token, onLogout }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState({});
+  const [pendingMessages, setPendingMessages] = useState([]); // Messages being sent
+  const [failedMessages, setFailedMessages] = useState([]); // Messages that failed to send
   const messageInputRef = useRef(null);
   const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
   const { error, success } = useToast();
@@ -81,6 +83,9 @@ export default function Chat({ user, token, onLogout }) {
     subscribe(currentChannel);
     // Mark channel as read when switching to it
     markChannelAsRead(currentChannel);
+    // Clear pending and failed messages when switching channels
+    setPendingMessages([]);
+    setFailedMessages([]);
   }, [currentChannel, searchQuery, subscribe]);
 
   // Handle WebSocket messages
@@ -216,6 +221,21 @@ export default function Chat({ user, token, onLogout }) {
   };
 
   const sendMessage = async (content) => {
+    const tempId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const pendingMessage = {
+      id: tempId,
+      channelId: currentChannel,
+      userId: user?.id,
+      username: user?.username,
+      userType: user?.type,
+      content: content.trim(),
+      timestamp: new Date(),
+      pending: true
+    };
+
+    // Add to pending messages immediately for UI feedback
+    setPendingMessages(prev => [...prev, pendingMessage]);
+
     try {
       const res = await fetch(`${API_URL}/channels/${currentChannel}/messages`, {
         method: 'POST',
@@ -229,10 +249,26 @@ export default function Chat({ user, token, onLogout }) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to send message');
       }
+      // Remove from pending on success
+      setPendingMessages(prev => prev.filter(m => m.id !== tempId));
     } catch (err) {
       console.error('Failed to send message:', err);
-      error(err.message || 'Failed to send message. Please try again.');
+      // Move to failed messages
+      setPendingMessages(prev => prev.filter(m => m.id !== tempId));
+      setFailedMessages(prev => [...prev, { ...pendingMessage, error: err.message }]);
+      error(err.message || 'Failed to send message. Click retry to try again.');
     }
+  };
+
+  const retryMessage = async (failedMessage) => {
+    // Remove from failed
+    setFailedMessages(prev => prev.filter(m => m.id !== failedMessage.id));
+    // Retry sending
+    await sendMessage(failedMessage.content);
+  };
+
+  const cancelFailedMessage = (failedMessageId) => {
+    setFailedMessages(prev => prev.filter(m => m.id !== failedMessageId));
   };
 
   const createChannel = async (name, description) => {
@@ -394,6 +430,10 @@ export default function Chat({ user, token, onLogout }) {
           onEditMessage={editMessage}
           isSearching={isSearching}
           searchQuery={searchQuery}
+          pendingMessages={pendingMessages}
+          failedMessages={failedMessages}
+          onRetryMessage={retryMessage}
+          onCancelFailedMessage={cancelFailedMessage}
         />
 
         <TypingIndicator users={currentTypingUsers.filter(u => u.userId !== user?.id)} />
