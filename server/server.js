@@ -440,6 +440,55 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
     }
   }
 
+  // Check for bot commands
+  const commandResult = executeCommand(content, req.user);
+  if (commandResult) {
+    // Create a command response message from the system
+    const responseMessage = {
+      id: uuidv4(),
+      channelId,
+      userId: 'system',
+      content: commandResult.content,
+      timestamp: new Date(),
+      type: 'command_response',
+      reactions: {},
+      replyTo: replyTo || null,
+      command: true,
+      ephemeral: commandResult.ephemeral
+    };
+
+    messages.set(responseMessage.id, responseMessage);
+
+    // Get reply data for broadcast
+    let replyData = null;
+    if (responseMessage.replyTo) {
+      const replyMessage = messages.get(responseMessage.replyTo);
+      if (replyMessage) {
+        const replyUser = users.get(replyMessage.userId);
+        replyData = {
+          id: replyMessage.id,
+          content: replyMessage.content.slice(0, 100),
+          username: replyUser?.username || 'Unknown',
+          userType: replyUser?.type || 'unknown'
+        };
+      }
+    }
+
+    // Broadcast to WebSocket clients
+    broadcastToChannel(channelId, {
+      event: 'message',
+      data: {
+        ...responseMessage,
+        username: '🤖 ClawBot',
+        userType: 'agent',
+        reactions: {},
+        replyToData: replyData
+      }
+    });
+
+    return res.status(201).json(responseMessage);
+  }
+
   const message = {
     id: uuidv4(),
     channelId,
@@ -718,6 +767,181 @@ app.post('/dm/:userId', authenticate, (req, res) => {
 
   res.status(201).json(message);
 });
+
+// Bot command handling
+const COMMANDS = {
+  help: {
+    description: 'Show available commands',
+    usage: '/help [command]',
+    handler: (args, context) => {
+      if (args.length > 0) {
+        const cmd = args[0].toLowerCase();
+        if (COMMANDS[cmd]) {
+          return {
+            content: `**/${cmd}** — ${COMMANDS[cmd].description}\nUsage: \`${COMMANDS[cmd].usage}\``,
+            ephemeral: true
+          };
+        }
+        return { content: `Unknown command: ${cmd}. Type /help for a list of commands.`, ephemeral: true };
+      }
+      
+      const commandList = Object.entries(COMMANDS)
+        .map(([name, info]) => `**/${name}** — ${info.description}`)
+        .join('\n');
+      
+      return {
+        content: `🤖 **Available Commands**\n\n${commandList}\n\nType \`/help <command>\` for more details on a specific command.`,
+        ephemeral: true
+      };
+    }
+  },
+  
+  status: {
+    description: 'Show system status and stats',
+    usage: '/status',
+    handler: (args, context) => {
+      const uptime = process.uptime();
+      const uptimeStr = formatUptime(uptime);
+      const memUsage = process.memoryUsage();
+      
+      return {
+        content: `📊 **System Status**\n\n` +
+          `⏱️ **Uptime:** ${uptimeStr}\n` +
+          `👥 **Users:** ${users.size} registered, ${Array.from(users.values()).filter(u => u.online).length} online\n` +
+          `💬 **Channels:** ${channels.size}\n` +
+          `📝 **Messages:** ${messages.size} stored\n` +
+          `🔗 **WebSocket Connections:** ${clients.size}\n` +
+          `💾 **Memory:** ${(memUsage.heapUsed / 1024 / 1024).toFixed(1)} MB used`,
+        ephemeral: false
+      };
+    }
+  },
+  
+  roll: {
+    description: 'Roll dice (e.g., /roll 2d6, /roll 20)',
+    usage: '/roll [number] or /roll [count]d[sides]',
+    handler: (args, context) => {
+      let count = 1;
+      let sides = 6;
+      
+      if (args.length > 0) {
+        const arg = args[0].toLowerCase();
+        if (arg.includes('d')) {
+          const [c, s] = arg.split('d');
+          count = parseInt(c) || 1;
+          sides = parseInt(s) || 6;
+        } else {
+          sides = parseInt(arg) || 6;
+        }
+      }
+      
+      count = Math.min(Math.max(count, 1), 100); // Max 100 dice
+      sides = Math.min(Math.max(sides, 2), 1000); // Max 1000 sides
+      
+      const rolls = [];
+      let total = 0;
+      for (let i = 0; i < count; i++) {
+        const roll = Math.floor(Math.random() * sides) + 1;
+        rolls.push(roll);
+        total += roll;
+      }
+      
+      const rollStr = count === 1 ? rolls[0] : `${rolls.join(' + ')} = **${total}**`;
+      return {
+        content: `🎲 **${context.username}** rolled ${count}d${sides}: ${rollStr}`,
+        ephemeral: false
+      };
+    }
+  },
+  
+  time: {
+    description: 'Show current server time',
+    usage: '/time',
+    handler: (args, context) => {
+      const now = new Date();
+      return {
+        content: `🕐 **Server Time:** ${now.toUTCString()}\n📅 **Local:** ${now.toLocaleString()}`,
+        ephemeral: false
+      };
+    }
+  },
+  
+  whois: {
+    description: 'Get info about a user',
+    usage: '/whois <username>',
+    handler: (args, context) => {
+      if (args.length === 0) {
+        return { content: '❌ Please specify a username. Usage: `/whois <username>`', ephemeral: true };
+      }
+      
+      const targetName = args[0].toLowerCase();
+      const target = Array.from(users.values()).find(u => 
+        u.username.toLowerCase() === targetName
+      );
+      
+      if (!target) {
+        return { content: `❌ User "${args[0]}" not found.`, ephemeral: true };
+      }
+      
+      const status = target.online ? '🟢 Online' : `⚪ Offline (last seen ${formatRelativeTime(target.lastSeen)})`;
+      return {
+        content: `👤 **${target.username}**\n\n` +
+          `**Type:** ${target.type === 'agent' ? '🤖 Agent' : '👤 Human'}\n` +
+          `**Status:** ${status}\n` +
+          `**Joined:** ${target.createdAt.toLocaleDateString()}`,
+        ephemeral: false
+      };
+    }
+  }
+};
+
+function formatUptime(seconds) {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+  return `${minutes}m ${secs}s`;
+}
+
+function formatRelativeTime(date) {
+  const now = new Date();
+  const diff = now - new Date(date);
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (minutes > 0) return `${minutes}m ago`;
+  return 'just now';
+}
+
+// Parse and execute bot commands
+function executeCommand(content, user) {
+  if (!content.startsWith('/')) return null;
+  
+  const parts = content.slice(1).split(' ');
+  const commandName = parts[0].toLowerCase();
+  const args = parts.slice(1).filter(arg => arg.length > 0);
+  
+  const command = COMMANDS[commandName];
+  if (!command) {
+    return {
+      content: `❌ Unknown command: /${commandName}. Type /help for available commands.`,
+      ephemeral: true
+    };
+  }
+  
+  return command.handler(args, { 
+    userId: user.id, 
+    username: user.username,
+    type: user.type 
+  });
+}
 
 // Agent-specific endpoints
 

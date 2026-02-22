@@ -494,6 +494,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                 const prevMsg = idx > 0 ? dateMessages[idx - 1] : null;
                 const isConsecutive = prevMsg && prevMsg.userId === msg.userId;
                 const isMe = msg.userId === currentUser?.id;
+                const isCommand = msg.command || msg.type === 'command_response';
                 const msgReactions = reactions?.[msg.id] || msg.reactions || {};
                 const isEditing = editingMessageId === msg.id;
 
@@ -507,13 +508,19 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                     )}
                     <div
                       id={`message-${msg.id}`}
-                      className={`message-row flex gap-3 group ${isConsecutive ? 'mt-0.5' : 'mt-4'}`}
+                      className={`message-row flex gap-3 group ${isConsecutive ? 'mt-0.5' : 'mt-4'} ${isCommand ? 'command-message' : ''}`}
                     >
                       {!isConsecutive ? (
                         <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
-                          msg.userType === 'agent' ? 'bg-agent' : 'bg-claw-600'
+                          isCommand 
+                            ? 'bg-gradient-to-br from-claw-500 to-claw-700' 
+                            : msg.userType === 'agent' 
+                              ? 'bg-agent' 
+                              : 'bg-claw-600'
                         }`}>
-                          {msg.userType === 'agent' ? (
+                          {isCommand ? (
+                            <Bot className="w-5 h-5 text-white" />
+                          ) : msg.userType === 'agent' ? (
                             <Bot className="w-5 h-5 text-white" />
                           ) : (
                             <User className="w-5 h-5 text-white" />
@@ -527,12 +534,16 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                     {!isConsecutive && (
                       <div className="flex items-baseline gap-2">
                         <span className={`font-semibold text-sm ${
-                          msg.userType === 'agent' ? 'text-agent' : 'text-claw-500'
+                          isCommand 
+                            ? 'text-claw-400' 
+                            : msg.userType === 'agent' 
+                              ? 'text-agent' 
+                              : 'text-claw-500'
                         }`}>
-                          {msg.username}
+                          {isCommand ? '🤖 ClawBot' : msg.username}
                         </span>
                         {/* Online indicator dot */}
-                        {userStatuses[msg.userId]?.online && (
+                        {userStatuses[msg.userId]?.online && !isCommand && (
                           <span 
                             className="w-2 h-2 bg-green-500 rounded-full"
                             title="Online now"
@@ -550,7 +561,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             (edited)
                           </span>
                         )}
-                        {!msg.deleted && !isEditing && (
+                        {!msg.deleted && !isEditing && !isCommand && (
                           <button
                             onClick={() => onReply && onReply(msg)}
                             className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
@@ -563,7 +574,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             <Reply className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        {!msg.deleted && !isEditing && onCopyMessage && (
+                        {!msg.deleted && !isEditing && onCopyMessage && !isCommand && (
                           <button
                             onClick={() => onCopyMessage(msg.content, msg.id)}
                             className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
@@ -639,12 +650,23 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                         <div className={`break-words ${isConsecutive ? 'mt-0.5' : ''} ${
                           msg.deleted
                             ? isDark ? 'text-gray-500 italic text-sm' : 'text-gray-400 italic text-sm'
-                            : isDark ? 'text-gray-100' : 'text-gray-900'
+                            : isCommand
+                              ? isDark ? 'text-gray-200' : 'text-gray-800'
+                              : isDark ? 'text-gray-100' : 'text-gray-900'
                         }`}>
-                          {msg.deleted ? msg.content : <MarkdownMessage text={msg.content} isDark={isDark} />}
+                          {msg.deleted ? (
+                            msg.content
+                          ) : isCommand ? (
+                            <div className="command-content prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ 
+                              __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                                .replace(/\n/g, '<br />')
+                            }} />
+                          ) : (
+                            <MarkdownMessage text={msg.content} isDark={isDark} />
+                          )}
                         </div>
 
-                        {!msg.deleted && (
+                        {!msg.deleted && !isCommand && (
                           <MessageReactions
                             messageId={msg.id}
                             reactions={msgReactions}
