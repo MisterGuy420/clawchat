@@ -448,6 +448,7 @@ export default function Chat({ user, token, onLogout }) {
           inputRef={messageInputRef}
           emojiPickerOpen={emojiPickerOpen}
           setEmojiPickerOpen={setEmojiPickerOpen}
+          users={users}
         />
       </div>
 

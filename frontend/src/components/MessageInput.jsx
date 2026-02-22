@@ -1,11 +1,13 @@
 import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Send, Smile, Paperclip, X, Image as ImageIcon, Keyboard } from 'lucide-react';
+import { Send, Smile, Paperclip, X, Image as ImageIcon, Keyboard, AtSign } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useClipboard } from '../hooks/useClipboard';
 import { useTheme } from '../contexts/ThemeContext';
+import { useMentions } from '../hooks/useMentions';
 import EmojiPicker from './EmojiPicker';
+import MentionDropdown from './MentionDropdown';
 
-const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emojiPickerOpen, setEmojiPickerOpen }, ref) {
+const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emojiPickerOpen, setEmojiPickerOpen, users = [] }, ref) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef(null);
   const { sendTyping } = useWebSocket();
@@ -13,6 +15,16 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
   const { attachments, handlePaste, removeAttachment, clearAttachments, hasAttachments } = useClipboard();
   const fileInputRef = useRef(null);
   const { isDark } = useTheme();
+  const mentionContainerRef = useRef(null);
+  
+  const { 
+    mentionState, 
+    handleInputChange, 
+    handleKeyDown: handleMentionKeyDown,
+    selectMention,
+    closeMentions,
+    inputRef: mentionInputRef
+  } = useMentions(users);
 
   // Expose focus method to parent via ref
   useImperativeHandle(ref, () => ({
@@ -20,6 +32,11 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
       textareaRef.current?.focus();
     }
   }));
+
+  // Sync refs
+  useEffect(() => {
+    mentionInputRef.current = textareaRef.current;
+  }, [mentionInputRef]);
 
   const handleTyping = useCallback(() => {
     if (!channelId) return;
@@ -42,6 +59,9 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
     e.preventDefault();
     if (!message.trim() && !hasAttachments) return;
     
+    // Close any open mentions
+    closeMentions();
+    
     // Clear typing indicator immediately on send
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -49,8 +69,6 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
     sendTyping(channelId, false);
     
     // TODO: Send attachments with message (for now just send message)
-    // In a full implementation, you'd upload attachments first, then send
-    // message with attachment URLs
     
     if (message.trim()) {
       onSend(message.trim());
@@ -64,6 +82,13 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
   };
 
   const handleKeyDown = (e) => {
+    // Handle mention navigation first
+    const handledByMention = handleMentionKeyDown(e, message, (newValue) => {
+      setMessage(newValue);
+    });
+    
+    if (handledByMention) return;
+    
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
@@ -77,8 +102,34 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
   };
 
   const handleChange = (e) => {
-    setMessage(e.target.value);
+    const newValue = e.target.value;
+    const cursorPosition = e.target.selectionStart;
+    setMessage(newValue);
+    handleInputChange(newValue, cursorPosition);
     handleTyping();
+  };
+
+  const handleSelectMention = (user) => {
+    const newValue = selectMention(user, message);
+    setMessage(newValue);
+  };
+
+  const insertAtSymbol = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newMessage = message.substring(0, start) + '@' + message.substring(end);
+    
+    setMessage(newMessage);
+    
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + 1;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+      handleInputChange(newMessage, newCursorPos);
+    }, 0);
   };
 
   const handleFileSelect = (e) => {
@@ -183,10 +234,13 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <div className={`flex-1 rounded-lg flex items-end transition-colors duration-200 ${
-          isDark ? 'bg-gray-700' : 'bg-gray-100'
-        }`}>
+      <form onSubmit={handleSubmit} className="flex gap-2 relative">
+        <div 
+          ref={mentionContainerRef}
+          className={`flex-1 rounded-lg flex items-end transition-colors duration-200 ${
+            isDark ? 'bg-gray-700' : 'bg-gray-100'
+          }`}
+        >
           <textarea
             ref={textareaRef}
             value={message}
@@ -212,6 +266,20 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
               multiple
               className="hidden"
             />
+            <button
+              type="button"
+              onClick={insertAtSymbol}
+              className={`p-2 rounded-lg transition-colors ${
+                mentionState.isOpen
+                  ? 'text-claw-400 bg-claw-500/20'
+                  : isDark 
+                    ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+              }`}
+              title="Mention someone (@)"
+            >
+              <AtSign className="w-5 h-5" />
+            </button>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -255,12 +323,21 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
         >
           <Send className="w-5 h-5 text-white" />
         </button>
+        
+        {/* Mention Dropdown */}
+        <MentionDropdown
+          isOpen={mentionState.isOpen}
+          users={mentionState.filteredUsers}
+          selectedIndex={mentionState.selectedIndex}
+          onSelect={handleSelectMention}
+          position={{ bottom: '100%', left: '56px' }}
+        />
       </form>
 
       <div className={`mt-2 text-xs text-center flex items-center justify-center gap-2 ${
         isDark ? 'text-gray-500' : 'text-gray-400'
       }`}>
-        <span>Press Enter to send, Shift+Enter for new line • Paste images directly</span>
+        <span>Enter to send • Shift+Enter for new line • @ to mention • Paste images</span>
         <button
           type="button"
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: true }))}

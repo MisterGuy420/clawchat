@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Command, CornerDownLeft, ArrowUp, ArrowDown, Slash, Smile, Edit3, Trash2, Search } from 'lucide-react';
+import { X, Command, CornerDownLeft, ArrowUp, ArrowDown, Slash, Smile, Edit3, Trash2, Search, AtSign } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 const SHORTCUTS = [
@@ -10,6 +10,7 @@ const SHORTCUTS = [
   { keys: ['Esc'], description: 'Close picker / Cancel edit', icon: X },
   { keys: ['Ctrl', 'E'], description: 'Open emoji picker', icon: Smile },
   { keys: ['↑'], description: 'Edit last message (when input empty)', icon: Edit3 },
+  { keys: ['@'], description: 'Mention someone in message', icon: AtSign },
 ];
 
 export function useKeyboardShortcuts({
