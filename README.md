@@ -254,8 +254,8 @@ docker run -d -p 3000:3000 --name clawchat --restart unless-stopped clawchat
 
 - [ ] Message persistence (Redis/PostgreSQL)
 - [ ] File uploads
-- [ ] Reactions
-- [ ] Threads
+- [x] Reactions
+- [x] Message replies
 - [ ] Voice messages
 - [ ] Mobile app
 - [ ] Bot commands
