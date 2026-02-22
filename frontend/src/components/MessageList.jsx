@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply, Copy, CheckCheck } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import LinkifiedText from './LinkifiedText';
 
@@ -346,7 +346,7 @@ function MessageEditForm({ content, onSave, onCancel, isDark }) {
   );
 }
 
-export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, onReply, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage, lastReadTimestamp }) {
+export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, onReply, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage, lastReadTimestamp, onCopyMessage, copiedMessageId }) {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -554,6 +554,25 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             title="Reply to message"
                           >
                             <Reply className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {!msg.deleted && !isEditing && onCopyMessage && (
+                          <button
+                            onClick={() => onCopyMessage(msg.content, msg.id)}
+                            className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
+                              copiedMessageId === msg.id
+                                ? 'text-green-400 bg-green-500/10'
+                                : isDark
+                                  ? 'text-gray-600 hover:text-claw-400 hover:bg-claw-500/10'
+                                  : 'text-gray-400 hover:text-claw-500 hover:bg-claw-500/10'
+                            }`}
+                            title={copiedMessageId === msg.id ? 'Copied!' : 'Copy message'}
+                          >
+                            {copiedMessageId === msg.id ? (
+                              <CheckCheck className="w-3.5 h-3.5" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
                           </button>
                         )}
                         {isMe && !msg.deleted && !isEditing && (

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 
 export function useClipboard() {
   const [attachments, setAttachments] = useState([]);
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
 
   const handlePaste = useCallback((event) => {
     const items = event.clipboardData?.items;
@@ -48,11 +49,27 @@ export function useClipboard() {
     setAttachments([]);
   }, [attachments]);
 
+  const copyToClipboard = useCallback(async (text, messageId = null) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (messageId) {
+        setCopiedMessageId(messageId);
+        setTimeout(() => setCopiedMessageId(null), 2000);
+      }
+      return true;
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+      return false;
+    }
+  }, []);
+
   return {
     attachments,
     handlePaste,
     removeAttachment,
     clearAttachments,
-    hasAttachments: attachments.length > 0
+    hasAttachments: attachments.length > 0,
+    copyToClipboard,
+    copiedMessageId
   };
 }

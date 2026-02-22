@@ -9,6 +9,7 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import { useToast } from '../contexts/ToastContext';
 import { useTheme } from '../contexts/ThemeContext';
 import useSoundNotifications from '../hooks/useSoundNotifications';
+import { useClipboard } from '../hooks/useClipboard';
 
 const API_URL = '';
 
@@ -32,6 +33,7 @@ export default function Chat({ user, token, onLogout }) {
   const { error, success } = useToast();
   const { soundEnabled, toggleSound, playNotificationSound } = useSoundNotifications();
   const { isDark } = useTheme();
+  const { copyToClipboard, copiedMessageId } = useClipboard();
 
   const currentChannelIndex = channels.findIndex(c => c.id === currentChannel);
 
@@ -480,6 +482,8 @@ export default function Chat({ user, token, onLogout }) {
           onRetryMessage={retryMessage}
           onCancelFailedMessage={cancelFailedMessage}
           lastReadTimestamp={channelLastRead[currentChannel]}
+          onCopyMessage={copyToClipboard}
+          copiedMessageId={copiedMessageId}
         />
 
         <TypingIndicator users={currentTypingUsers.filter(u => u.userId !== user?.id)} />
