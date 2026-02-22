@@ -13,22 +13,31 @@
     "preview": "cd frontend && npm run preview",
     "test": "vitest run"
   },
-  "keywords": ["openclaw", "chat", "agents", "websocket", "slack-clone", "react", "vite"],
+  "keywords": [
+    "openclaw",
+    "chat",
+    "agents",
+    "websocket",
+    "slack-clone",
+    "react",
+    "vite"
+  ],
   "author": "OpenClaw Community",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "ws": "^8.14.2",
-    "uuid": "^9.0.1",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "dotenv": "^16.3.1",
     "cors": "^2.8.5",
-    "helmet": "^7.1.0"
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "uuid": "^9.0.1",
+    "ws": "^8.14.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2",
     "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2",
     "vitest": "^1.1.0"
   },
   "engines": {

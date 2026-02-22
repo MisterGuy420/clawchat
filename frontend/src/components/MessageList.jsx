@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply, Copy, CheckCheck } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply, Copy, CheckCheck, FileText, Download, Image as ImageIcon, Film, Music } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import MarkdownMessage from './MarkdownMessage';
 
@@ -80,6 +80,91 @@ function formatDate(date) {
   if (d.toDateString() === today.toDateString()) return 'Today';
   if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Attachment display component
+function AttachmentDisplay({ attachments, isDark }) {
+  if (!attachments || attachments.length === 0) return null;
+
+  const getFileIcon = (mimeType) => {
+    if (mimeType?.startsWith('image/')) return <ImageIcon className="w-8 h-8" />;
+    if (mimeType?.startsWith('video/')) return <Film className="w-8 h-8" />;
+    if (mimeType?.startsWith('audio/')) return <Music className="w-8 h-8" />;
+    return <FileText className="w-8 h-8" />;
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  return (
+    <div className="mt-2 space-y-2">
+      {attachments.map((file) => (
+        <div key={file.id} className={`rounded-lg overflow-hidden border ${
+          isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+        }`}>
+          {file.mimeType?.startsWith('image/') ? (
+            // Image preview with click to enlarge
+            <a 
+              href={file.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block group"
+            >
+              <img
+                src={file.url}
+                alt={file.originalName}
+                className="max-w-full max-h-64 object-contain cursor-zoom-in group-hover:opacity-90 transition-opacity"
+                loading="lazy"
+              />
+            </a>
+          ) : file.mimeType?.startsWith('video/') ? (
+            // Video player
+            <video
+              controls
+              className="max-w-full max-h-64"
+              preload="metadata"
+            >
+              <source src={file.url} type={file.mimeType} />
+              Your browser does not support the video tag.
+            </video>
+          ) : file.mimeType?.startsWith('audio/') ? (
+            // Audio player
+            <audio controls className="w-full p-2" preload="metadata">
+              <source src={file.url} type={file.mimeType} />
+              Your browser does not support the audio tag.
+            </audio>
+          ) : (
+            // Generic file download
+            <a
+              href={file.url}
+              download={file.originalName}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-center gap-3 p-3 hover:bg-opacity-80 transition-colors ${
+                isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+              }`}
+            >
+              <div className={`p-2 rounded-lg ${isDark ? 'bg-gray-700 text-claw-400' : 'bg-gray-200 text-claw-600'}`}>
+                {getFileIcon(file.mimeType)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                  {file.originalName}
+                </p>
+                <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {formatFileSize(file.size)}
+                </p>
+              </div>
+              <Download className={`w-5 h-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+            </a>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // Reply preview component
@@ -666,6 +751,11 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                           )}
                         </div>
 
+                        {/* Attachments */}
+                        {!msg.deleted && msg.attachments && msg.attachments.length > 0 && (
+                          <AttachmentDisplay attachments={msg.attachments} isDark={isDark} />
+                        )}
+
                         {!msg.deleted && !isCommand && (
                           <MessageReactions
                             messageId={msg.id}
@@ -736,6 +826,13 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                 <div className={`break-words ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   <MarkdownMessage text={msg.content} isDark={isDark} />
                 </div>
+                {msg.attachments?.length > 0 && (
+                  <div className={`mt-2 p-2 rounded-lg border ${isDark ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-100 border-gray-200'}`}>
+                    <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {msg.attachments.length} file{msg.attachments.length > 1 ? 's' : ''} uploading...
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           ))}

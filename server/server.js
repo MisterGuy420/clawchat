@@ -7,11 +7,51 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
+import multer from 'multer';
+import fs from 'fs';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${uuidv4()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images and common file types
+    const allowedMimes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+      'application/pdf', 'text/plain', 'text/markdown',
+      'application/json', 'application/javascript',
+      'video/mp4', 'video/webm', 'audio/mpeg', 'audio/wav', 'audio/webm'
+    ];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type not allowed: ${file.mimetype}`), false);
+    }
+  }
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +70,8 @@ app.use(helmet({
 
 app.use(cors());
 app.use(express.json());
+// Serve static files from uploads directory
+app.use('/uploads', express.static(uploadsDir));
 // Serve static files from frontend build
 const staticPath = process.env.NODE_ENV === 'development' 
   ? path.join(__dirname, '../frontend/dist')
@@ -188,6 +230,33 @@ app.get('/me', authenticate, (req, res) => {
     type: req.user.type,
     createdAt: req.user.createdAt
   });
+});
+
+// File upload endpoint
+app.post('/upload', authenticate, upload.array('files', 5), (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    const uploadedFiles = req.files.map(file => ({
+      id: uuidv4(),
+      filename: file.filename,
+      originalName: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size,
+      url: `/uploads/${file.filename}`,
+      uploadedAt: new Date()
+    }));
+
+    res.json({
+      success: true,
+      files: uploadedFiles
+    });
+  } catch (err) {
+    console.error('[ClawChat] Upload error:', err);
+    res.status(500).json({ error: 'Upload failed', details: err.message });
+  }
 });
 
 // List channels
@@ -409,7 +478,8 @@ app.get('/channels/:id/messages', authenticate, (req, res) => {
       username: user?.username || 'Unknown',
       userType: user?.type || 'unknown',
       reactions: reactionsWithUsers,
-      replyToData: replyData
+      replyToData: replyData,
+      attachments: m.attachments || []
     };
   });
 
@@ -497,7 +567,8 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
     timestamp: new Date(),
     type: 'text',
     reactions: {}, // emoji -> Set of userIds
-    replyTo: replyTo || null
+    replyTo: replyTo || null,
+    attachments: req.body.attachments || [] // Array of uploaded file metadata
   };
 
   messages.set(message.id, message);
@@ -525,7 +596,8 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
       username: req.user.username,
       userType: req.user.type,
       reactions: {},
-      replyToData: replyData
+      replyToData: replyData,
+      attachments: message.attachments || []
     }
   });
 

@@ -243,7 +243,7 @@ export default function Chat({ user, token, onLogout }) {
     setSearchQuery(query);
   };
 
-  const sendMessage = async (content) => {
+  const sendMessage = async (content, attachments = []) => {
     const tempId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const pendingMessage = {
       id: tempId,
@@ -260,7 +260,8 @@ export default function Chat({ user, token, onLogout }) {
         content: replyTo.content.slice(0, 100),
         username: replyTo.username,
         userType: replyTo.userType
-      } : null
+      } : null,
+      attachments: attachments || []
     };
 
     // Add to pending messages immediately for UI feedback
@@ -273,7 +274,7 @@ export default function Chat({ user, token, onLogout }) {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ content, replyTo: replyTo?.id })
+        body: JSON.stringify({ content, replyTo: replyTo?.id, attachments })
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -499,6 +500,7 @@ export default function Chat({ user, token, onLogout }) {
           users={users}
           replyTo={replyTo}
           onCancelReply={cancelReply}
+          token={token}
         />
       </div>
 

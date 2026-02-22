@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Send, Smile, Paperclip, X, Image as ImageIcon, Keyboard, AtSign, Reply } from 'lucide-react';
+import { Send, Smile, Paperclip, X, Image as ImageIcon, Keyboard, AtSign, Reply, Loader2 } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useClipboard } from '../hooks/useClipboard';
 import { useTheme } from '../contexts/ThemeContext';
@@ -9,12 +9,14 @@ import EmojiPicker from './EmojiPicker';
 import MentionDropdown from './MentionDropdown';
 import EmojiAutocomplete from './EmojiAutocomplete';
 
-const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emojiPickerOpen, setEmojiPickerOpen, users = [], replyTo, onCancelReply }, ref) {
+const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emojiPickerOpen, setEmojiPickerOpen, users = [], replyTo, onCancelReply, token }, ref) {
   const [message, setMessage] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const textareaRef = useRef(null);
   const { sendTyping } = useWebSocket();
   const typingTimeoutRef = useRef(null);
-  const { attachments, handlePaste, removeAttachment, clearAttachments, hasAttachments } = useClipboard();
+  const { attachments, handlePaste, removeAttachment, clearAttachments, hasAttachments, addAttachment } = useClipboard();
   const fileInputRef = useRef(null);
   const { isDark } = useTheme();
   const mentionContainerRef = useRef(null);
@@ -68,9 +70,9 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
     }, 3000);
   }, [channelId, sendTyping]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message.trim() && !hasAttachments) return;
+    if ((!message.trim() && !hasAttachments) || isUploading) return;
     
     // Close any open mentions
     closeMentions();
@@ -81,10 +83,43 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
     }
     sendTyping(channelId, false);
     
-    // TODO: Send attachments with message (for now just send message)
+    // Upload attachments first if any
+    let uploadedAttachments = [];
+    if (hasAttachments) {
+      setIsUploading(true);
+      setUploadProgress(0);
+      try {
+        const formData = new FormData();
+        attachments.forEach(attachment => {
+          formData.append('files', attachment.blob, attachment.name);
+        });
+        
+        const response = await fetch('/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+        
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
+        
+        const result = await response.json();
+        uploadedAttachments = result.files || [];
+      } catch (err) {
+        console.error('Upload error:', err);
+        // Continue sending message without attachments
+      } finally {
+        setIsUploading(false);
+        setUploadProgress(0);
+      }
+    }
     
-    if (message.trim()) {
-      onSend(message.trim());
+    // Send message with attachments
+    if (message.trim() || uploadedAttachments.length > 0) {
+      onSend(message.trim(), uploadedAttachments);
     }
     
     setMessage('');
@@ -172,23 +207,12 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
     if (!files || files.length === 0) return;
     
     Array.from(files).forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-        const previewUrl = URL.createObjectURL(file);
-        
-        // Access the attachments setter through the hook's internal mechanism
-        // We need to add the file via the paste handler logic
-        const syntheticEvent = {
-          clipboardData: {
-            items: [{
-              type: file.type,
-              getAsFile: () => file
-            }]
-          },
-          preventDefault: () => {}
-        };
-        handlePaste(syntheticEvent);
+      // Check file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`File ${file.name} is too large. Max size is 10MB.`);
+        return;
       }
+      addAttachment(file);
     });
     
     // Reset file input
@@ -199,6 +223,14 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const getFileIcon = (mimeType) => {
+    if (mimeType?.startsWith('image/')) return <ImageIcon className={`w-8 h-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />;
+    if (mimeType?.startsWith('video/')) return <span className={`text-2xl ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>🎥</span>;
+    if (mimeType?.startsWith('audio/')) return <span className={`text-2xl ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>🎵</span>;
+    if (mimeType === 'application/pdf') return <span className={`text-2xl ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>📄</span>;
+    return <span className={`text-2xl ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>📎</span>;
   };
 
   const handleEmojiSelect = (emoji) => {
@@ -246,13 +278,14 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <ImageIcon className={`w-8 h-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                  getFileIcon(attachment.type)
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => removeAttachment(attachment.id)}
-                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                disabled={isUploading}
+                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md disabled:opacity-50"
                 title="Remove attachment"
               >
                 <X className="w-3 h-3" />
@@ -266,6 +299,17 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
               </div>
             </div>
           ))}
+          
+          {/* Uploading indicator */}
+          {isUploading && (
+            <div className={`flex items-center justify-center w-20 h-20 rounded-lg border ${
+              isDark 
+                ? 'bg-gray-700 border-gray-600' 
+                : 'bg-gray-100 border-gray-300'
+            }`}>
+              <Loader2 className={`w-6 h-6 animate-spin ${isDark ? 'text-claw-400' : 'text-claw-500'}`} />
+            </div>
+          )}
         </div>
       )}
 
@@ -382,10 +426,14 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
 
         <button
           type="submit"
-          disabled={!message.trim() && !hasAttachments}
+          disabled={(!message.trim() && !hasAttachments) || isUploading}
           className="px-4 bg-claw-600 hover:bg-claw-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center justify-center"
         >
-          <Send className="w-5 h-5 text-white" />
+          {isUploading ? (
+            <Loader2 className="w-5 h-5 text-white animate-spin" />
+          ) : (
+            <Send className="w-5 h-5 text-white" />
+          )}
         </button>
         
         {/* Mention Dropdown */}

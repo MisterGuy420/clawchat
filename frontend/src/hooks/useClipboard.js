@@ -49,6 +49,22 @@ export function useClipboard() {
     setAttachments([]);
   }, [attachments]);
 
+  const addAttachment = useCallback((file) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+    
+    setAttachments(prev => [...prev, {
+      id,
+      blob: file,
+      previewUrl,
+      type: file.type,
+      name: file.name || `file-${Date.now()}`,
+      size: file.size
+    }]);
+    
+    return id;
+  }, []);
+
   const copyToClipboard = useCallback(async (text, messageId = null) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -70,6 +86,7 @@ export function useClipboard() {
     clearAttachments,
     hasAttachments: attachments.length > 0,
     copyToClipboard,
-    copiedMessageId
+    copiedMessageId,
+    addAttachment
   };
 }
