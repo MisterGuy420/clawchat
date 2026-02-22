@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown } from 'lucide-react';
 import LinkifiedText from './LinkifiedText';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '👏', '🔥', '😢', '🤔', '👎'];
@@ -282,12 +282,74 @@ export default function MessageList({ messages, loading, currentUser, reactions,
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
+  const [showJumpButton, setShowJumpButton] = useState(false);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
+  const [newMessageCount, setNewMessageCount] = useState(0);
+  const lastMessageCountRef = useRef(messages.length);
+  const isScrolledRef = useRef(false);
 
-  useEffect(() => {
+  // Check scroll position and show/hide jump button
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    const scrollBottom = scrollHeight - scrollTop - clientHeight;
+    const isNearBottom = scrollBottom < 100;
+    
+    isScrolledRef.current = !isNearBottom;
+    setShowJumpButton(!isNearBottom);
+    
+    // Clear new message indicator when scrolling to bottom
+    if (isNearBottom && hasNewMessages) {
+      setHasNewMessages(false);
+      setNewMessageCount(0);
+    }
+  };
+
+  // Scroll to bottom function
+  const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
+    setHasNewMessages(false);
+    setNewMessageCount(0);
+    isScrolledRef.current = false;
+  };
+
+  // Auto-scroll on initial load and when at bottom
+  useEffect(() => {
+    if (messagesEndRef.current && !isScrolledRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
+
+  // Track new messages when scrolled up
+  useEffect(() => {
+    const prevCount = lastMessageCountRef.current;
+    const currentCount = messages.length;
+    
+    if (currentCount > prevCount) {
+      const newCount = currentCount - prevCount;
+      const lastMessage = messages[messages.length - 1];
+      
+      // Only count messages from other users
+      if (lastMessage && lastMessage.userId !== currentUser?.id && isScrolledRef.current) {
+        setHasNewMessages(true);
+        setNewMessageCount(prev => prev + newCount);
+      }
+    }
+    
+    lastMessageCountRef.current = currentCount;
+  }, [messages, currentUser?.id]);
+
+  // Reset state when channel/search changes
+  useEffect(() => {
+    setShowJumpButton(false);
+    setHasNewMessages(false);
+    setNewMessageCount(0);
+    isScrolledRef.current = false;
+    lastMessageCountRef.current = messages.length;
+  }, [isSearching, searchQuery]);
 
   const handleEditStart = (messageId) => {
     setEditingMessageId(messageId);
@@ -323,7 +385,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
   }, {});
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto scrollbar-thin p-4">
+    <div ref={containerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto scrollbar-thin p-4 relative">
       {Object.entries(groupedMessages).map(([date, dateMessages]) => (
         <div key={date}>
           <div className="flex items-center justify-center my-4">
@@ -452,6 +514,22 @@ export default function MessageList({ messages, loading, currentUser, reactions,
       )}
 
       <div ref={messagesEndRef} />
+
+      {/* Jump to bottom button */}
+      {showJumpButton && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 bg-claw-600 hover:bg-claw-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-10"
+        >
+          <ChevronDown className="w-4 h-4" />
+          <span>Jump to bottom</span>
+          {hasNewMessages && newMessageCount > 0 && (
+            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {newMessageCount > 99 ? '99+' : newMessageCount}
+            </span>
+          )}
+        </button>
+      )}
     </div>
   );
 }
