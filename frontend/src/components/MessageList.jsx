@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import LinkifiedText from './LinkifiedText';
 
@@ -76,10 +76,38 @@ function formatDate(date) {
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  
+
   if (d.toDateString() === today.toDateString()) return 'Today';
   if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Reply preview component
+function ReplyPreview({ replyData, isDark, onClick }) {
+  if (!replyData) return null;
+
+  return (
+    <div
+      onClick={onClick}
+      className={`flex items-center gap-2 mb-1 px-2 py-1 rounded cursor-pointer transition-colors ${
+        isDark
+          ? 'bg-gray-700/50 hover:bg-gray-700 border-l-2 border-gray-600'
+          : 'bg-gray-200/50 hover:bg-gray-200 border-l-2 border-gray-300'
+      }`}
+    >
+      <Reply className={`w-3 h-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+      <span className={`text-xs font-medium ${
+        replyData.userType === 'agent' ? 'text-agent' : 'text-claw-500'
+      }`}>
+        {replyData.username}
+      </span>
+      <span className={`text-xs truncate max-w-[200px] ${
+        isDark ? 'text-gray-400' : 'text-gray-500'
+      }`}>
+        {replyData.content}
+      </span>
+    </div>
+  );
 }
 
 // Reaction picker popup
@@ -88,17 +116,17 @@ function ReactionPicker({ isOpen, onSelect, onClose, position, isDark }) {
 
   return (
     <>
-      <div 
-        className="fixed inset-0 z-40" 
+      <div
+        className="fixed inset-0 z-40"
         onClick={onClose}
       />
-      <div 
+      <div
         className={`absolute z-50 border rounded-lg shadow-xl p-2 flex gap-1 ${
-          isDark 
-            ? 'bg-gray-800 border-gray-600' 
+          isDark
+            ? 'bg-gray-800 border-gray-600'
             : 'bg-white border-gray-300'
         }`}
-        style={{ 
+        style={{
           bottom: position?.bottom || '100%',
           left: position?.left || 0,
           marginBottom: '8px'
@@ -124,7 +152,7 @@ function ReactionPicker({ isOpen, onSelect, onClose, position, isDark }) {
 // Single reaction badge
 function ReactionBadge({ emoji, users, currentUserId, onToggle, isDark }) {
   const currentUserReacted = users.some(u => u.userId === currentUserId);
-  const tooltipText = users.length > 3 
+  const tooltipText = users.length > 3
     ? `${users.slice(0, 3).map(u => u.username).join(', ')} and ${users.length - 3} others`
     : users.map(u => u.username).join(', ');
 
@@ -132,8 +160,8 @@ function ReactionBadge({ emoji, users, currentUserId, onToggle, isDark }) {
     <button
       onClick={() => onToggle(emoji)}
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm transition-all ${
-        currentUserReacted 
-          ? 'bg-claw-600/30 border border-claw-500 hover:bg-claw-600/50' 
+        currentUserReacted
+          ? 'bg-claw-600/30 border border-claw-500 hover:bg-claw-600/50'
           : isDark
             ? 'bg-gray-700/50 border border-gray-600 hover:bg-gray-700'
             : 'bg-gray-200/50 border border-gray-300 hover:bg-gray-200'
@@ -158,7 +186,7 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
   const handleToggle = (emoji) => {
     const emojiReactions = reactions?.[emoji] || [];
     const userReacted = emojiReactions.some(r => r.userId === currentUserId);
-    
+
     if (userReacted) {
       onRemoveReaction(messageId, emoji);
     } else {
@@ -199,21 +227,21 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
           isDark={isDark}
         />
       ))}
-      
+
       <div className="relative" ref={pickerRef}>
         <button
           ref={buttonRef}
           onClick={handleOpenPicker}
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm border border-transparent transition-all opacity-0 group-hover:opacity-100 ${
-            isDark 
-              ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-700/50 hover:border-gray-600' 
+            isDark
+              ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-700/50 hover:border-gray-600'
               : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200/50 hover:border-gray-300'
           }`}
           title="Add reaction"
         >
           <SmilePlus className="w-4 h-4" />
         </button>
-        
+
         <ReactionPicker
           isOpen={showPicker}
           onSelect={handleSelectEmoji}
@@ -267,8 +295,8 @@ function MessageEditForm({ content, onSave, onCancel, isDark }) {
         onChange={(e) => setEditContent(e.target.value)}
         onKeyDown={handleKeyDown}
         className={`w-full border border-claw-500 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-claw-500 ${
-          isDark 
-            ? 'bg-gray-800 text-gray-100' 
+          isDark
+            ? 'bg-gray-800 text-gray-100'
             : 'bg-white text-gray-900 border-gray-300'
         }`}
         rows={Math.min(5, editContent.split('\n').length + 1)}
@@ -285,8 +313,8 @@ function MessageEditForm({ content, onSave, onCancel, isDark }) {
         <button
           onClick={onCancel}
           className={`flex items-center gap-1 px-3 py-1 text-sm rounded transition-colors ${
-            isDark 
-              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+            isDark
+              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
               : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
           }`}
         >
@@ -301,7 +329,7 @@ function MessageEditForm({ content, onSave, onCancel, isDark }) {
   );
 }
 
-export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage }) {
+export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, onReply, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage }) {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -315,14 +343,14 @@ export default function MessageList({ messages, loading, currentUser, reactions,
   // Check scroll position and show/hide jump button
   const handleScroll = () => {
     if (!containerRef.current) return;
-    
+
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
     const scrollBottom = scrollHeight - scrollTop - clientHeight;
     const isNearBottom = scrollBottom < 100;
-    
+
     isScrolledRef.current = !isNearBottom;
     setShowJumpButton(!isNearBottom);
-    
+
     // Clear new message indicator when scrolling to bottom
     if (isNearBottom && hasNewMessages) {
       setHasNewMessages(false);
@@ -351,18 +379,18 @@ export default function MessageList({ messages, loading, currentUser, reactions,
   useEffect(() => {
     const prevCount = lastMessageCountRef.current;
     const currentCount = messages.length;
-    
+
     if (currentCount > prevCount) {
       const newCount = currentCount - prevCount;
       const lastMessage = messages[messages.length - 1];
-      
+
       // Only count messages from other users
       if (lastMessage && lastMessage.userId !== currentUser?.id && isScrolledRef.current) {
         setHasNewMessages(true);
         setNewMessageCount(prev => prev + newCount);
       }
     }
-    
+
     lastMessageCountRef.current = currentCount;
   }, [messages, currentUser?.id]);
 
@@ -431,6 +459,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
               return (
                 <div
                   key={msg.id}
+                  id={`message-${msg.id}`}
                   className={`message-row flex gap-3 group ${isConsecutive ? 'mt-0.5' : 'mt-4'}`}
                 >
                   {!isConsecutive ? (
@@ -467,13 +496,26 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             (edited)
                           </span>
                         )}
+                        {!msg.deleted && !isEditing && (
+                          <button
+                            onClick={() => onReply && onReply(msg)}
+                            className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
+                              isDark
+                                ? 'text-gray-600 hover:text-claw-400 hover:bg-claw-500/10'
+                                : 'text-gray-400 hover:text-claw-500 hover:bg-claw-500/10'
+                            }`}
+                            title="Reply to message"
+                          >
+                            <Reply className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         {isMe && !msg.deleted && !isEditing && (
                           <>
                             <button
                               onClick={() => handleEditStart(msg.id)}
                               className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
-                                isDark 
-                                  ? 'text-gray-600 hover:text-claw-400 hover:bg-claw-500/10' 
+                                isDark
+                                  ? 'text-gray-600 hover:text-claw-400 hover:bg-claw-500/10'
                                   : 'text-gray-400 hover:text-claw-500 hover:bg-claw-500/10'
                               }`}
                               title="Edit message"
@@ -483,8 +525,8 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             <button
                               onClick={() => onDeleteMessage && onDeleteMessage(msg.id)}
                               className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
-                                isDark 
-                                  ? 'text-gray-600 hover:text-red-400 hover:bg-red-500/10' 
+                                isDark
+                                  ? 'text-gray-600 hover:text-red-400 hover:bg-red-500/10'
                                   : 'text-gray-400 hover:text-red-500 hover:bg-red-500/10'
                               }`}
                               title="Delete message"
@@ -495,7 +537,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                         )}
                       </div>
                     )}
-                    
+
                     {isEditing ? (
                       <div className={isConsecutive ? 'mt-0.5' : ''}>
                         <MessageEditForm
@@ -507,14 +549,28 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                       </div>
                     ) : (
                       <>
+                        {msg.replyToData && (
+                          <ReplyPreview
+                            replyData={msg.replyToData}
+                            isDark={isDark}
+                            onClick={() => {
+                              const element = document.getElementById(`message-${msg.replyToData.id}`);
+                              if (element) {
+                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                element.classList.add('highlight-message');
+                                setTimeout(() => element.classList.remove('highlight-message'), 2000);
+                              }
+                            }}
+                          />
+                        )}
                         <div className={`break-words ${isConsecutive ? 'mt-0.5' : ''} ${
-                          msg.deleted 
+                          msg.deleted
                             ? isDark ? 'text-gray-500 italic text-sm' : 'text-gray-400 italic text-sm'
                             : isDark ? 'text-gray-100' : 'text-gray-900'
                         }`}>
                           {msg.deleted ? msg.content : <LinkifiedText text={msg.content} />}
                         </div>
-                        
+
                         {!msg.deleted && (
                           <MessageReactions
                             messageId={msg.id}
@@ -630,8 +686,8 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                   <button
                     onClick={() => onCancelFailedMessage && onCancelFailedMessage(msg.id)}
                     className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
-                      isDark 
-                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                      isDark
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                         : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
                     }`}
                   >

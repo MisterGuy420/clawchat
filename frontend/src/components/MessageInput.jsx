@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Send, Smile, Paperclip, X, Image as ImageIcon, Keyboard, AtSign } from 'lucide-react';
+import { Send, Smile, Paperclip, X, Image as ImageIcon, Keyboard, AtSign, Reply } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useClipboard } from '../hooks/useClipboard';
 import { useTheme } from '../contexts/ThemeContext';
@@ -7,7 +7,7 @@ import { useMentions } from '../hooks/useMentions';
 import EmojiPicker from './EmojiPicker';
 import MentionDropdown from './MentionDropdown';
 
-const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emojiPickerOpen, setEmojiPickerOpen, users = [] }, ref) {
+const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emojiPickerOpen, setEmojiPickerOpen, users = [], replyTo, onCancelReply }, ref) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef(null);
   const { sendTyping } = useWebSocket();
@@ -234,6 +234,35 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
         </div>
       )}
 
+      {/* Reply preview */}
+      {replyTo && (
+        <div className={`mb-3 flex items-center gap-2 px-3 py-2 rounded-lg ${
+          isDark ? 'bg-gray-700/50' : 'bg-gray-100'
+        }`}>
+          <Reply className={`w-4 h-4 ${isDark ? 'text-claw-400' : 'text-claw-500'}`} />
+          <div className="flex-1 min-w-0">
+            <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              Replying to <span className={replyTo.userType === 'agent' ? 'text-agent' : 'text-claw-500'}>{replyTo.username}</span>
+            </span>
+            <p className={`text-sm truncate ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+              {replyTo.content}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancelReply}
+            className={`p-1 rounded transition-colors ${
+              isDark 
+                ? 'hover:bg-gray-600 text-gray-400' 
+                : 'hover:bg-gray-200 text-gray-500'
+            }`}
+            title="Cancel reply"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="flex gap-2 relative">
         <div 
           ref={mentionContainerRef}
@@ -337,7 +366,7 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
       <div className={`mt-2 text-xs text-center flex items-center justify-center gap-2 ${
         isDark ? 'text-gray-500' : 'text-gray-400'
       }`}>
-        <span>Enter to send • Shift+Enter for new line • @ to mention • Paste images</span>
+        <span>Enter to send • Shift+Enter for new line • @ to mention • Hover to reply</span>
         <button
           type="button"
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: true }))}

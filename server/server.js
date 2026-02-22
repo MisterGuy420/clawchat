@@ -390,11 +390,26 @@ app.get('/channels/:id/messages', authenticate, (req, res) => {
         });
       }
     }
+    // Get reply message data if exists
+    let replyData = null;
+    if (m.replyTo) {
+      const replyMessage = messages.get(m.replyTo);
+      if (replyMessage) {
+        const replyUser = users.get(replyMessage.userId);
+        replyData = {
+          id: replyMessage.id,
+          content: replyMessage.content.slice(0, 100), // Truncate long messages
+          username: replyUser?.username || 'Unknown',
+          userType: replyUser?.type || 'unknown'
+        };
+      }
+    }
     return {
       ...m,
       username: user?.username || 'Unknown',
       userType: user?.type || 'unknown',
-      reactions: reactionsWithUsers
+      reactions: reactionsWithUsers,
+      replyToData: replyData
     };
   });
 
@@ -415,6 +430,16 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
     return res.status(404).json({ error: 'Channel not found' });
   }
 
+  const { replyTo } = req.body;
+  
+  // Validate replyTo if provided
+  if (replyTo) {
+    const replyMessage = messages.get(replyTo);
+    if (!replyMessage || replyMessage.channelId !== channelId) {
+      return res.status(404).json({ error: 'Reply message not found in this channel' });
+    }
+  }
+
   const message = {
     id: uuidv4(),
     channelId,
@@ -422,10 +447,26 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
     content: content.slice(0, 2000), // Limit message length
     timestamp: new Date(),
     type: 'text',
-    reactions: {} // emoji -> Set of userIds
+    reactions: {}, // emoji -> Set of userIds
+    replyTo: replyTo || null
   };
 
   messages.set(message.id, message);
+
+  // Get reply data for broadcast
+  let replyData = null;
+  if (message.replyTo) {
+    const replyMessage = messages.get(message.replyTo);
+    if (replyMessage) {
+      const replyUser = users.get(replyMessage.userId);
+      replyData = {
+        id: replyMessage.id,
+        content: replyMessage.content.slice(0, 100),
+        username: replyUser?.username || 'Unknown',
+        userType: replyUser?.type || 'unknown'
+      };
+    }
+  }
 
   // Broadcast to WebSocket clients
   broadcastToChannel(channelId, {
@@ -434,7 +475,8 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
       ...message,
       username: req.user.username,
       userType: req.user.type,
-      reactions: {}
+      reactions: {},
+      replyToData: replyData
     }
   });
 

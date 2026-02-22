@@ -25,6 +25,7 @@ export default function Chat({ user, token, onLogout }) {
   const [unreadCounts, setUnreadCounts] = useState({});
   const [pendingMessages, setPendingMessages] = useState([]); // Messages being sent
   const [failedMessages, setFailedMessages] = useState([]); // Messages that failed to send
+  const [replyTo, setReplyTo] = useState(null);
   const messageInputRef = useRef(null);
   const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
   const { error, success } = useToast();
@@ -232,7 +233,14 @@ export default function Chat({ user, token, onLogout }) {
       userType: user?.type,
       content: content.trim(),
       timestamp: new Date(),
-      pending: true
+      pending: true,
+      replyTo: replyTo?.id || null,
+      replyToData: replyTo ? {
+        id: replyTo.id,
+        content: replyTo.content.slice(0, 100),
+        username: replyTo.username,
+        userType: replyTo.userType
+      } : null
     };
 
     // Add to pending messages immediately for UI feedback
@@ -245,7 +253,7 @@ export default function Chat({ user, token, onLogout }) {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content, replyTo: replyTo?.id })
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -253,6 +261,8 @@ export default function Chat({ user, token, onLogout }) {
       }
       // Remove from pending on success
       setPendingMessages(prev => prev.filter(m => m.id !== tempId));
+      // Clear reply after successful send
+      setReplyTo(null);
     } catch (err) {
       console.error('Failed to send message:', err);
       // Move to failed messages
@@ -271,6 +281,18 @@ export default function Chat({ user, token, onLogout }) {
 
   const cancelFailedMessage = (failedMessageId) => {
     setFailedMessages(prev => prev.filter(m => m.id !== failedMessageId));
+  };
+
+  const handleReply = (message) => {
+    setReplyTo(message);
+    // Focus the input after setting reply
+    setTimeout(() => {
+      messageInputRef.current?.focus();
+    }, 0);
+  };
+
+  const cancelReply = () => {
+    setReplyTo(null);
   };
 
   const createChannel = async (name, description) => {
@@ -432,6 +454,7 @@ export default function Chat({ user, token, onLogout }) {
           onRemoveReaction={removeReaction}
           onDeleteMessage={deleteMessage}
           onEditMessage={editMessage}
+          onReply={handleReply}
           isSearching={isSearching}
           searchQuery={searchQuery}
           pendingMessages={pendingMessages}
@@ -449,6 +472,8 @@ export default function Chat({ user, token, onLogout }) {
           emojiPickerOpen={emojiPickerOpen}
           setEmojiPickerOpen={setEmojiPickerOpen}
           users={users}
+          replyTo={replyTo}
+          onCancelReply={cancelReply}
         />
       </div>
 

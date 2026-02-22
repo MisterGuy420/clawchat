@@ -7,10 +7,11 @@ const SHORTCUTS = [
   { keys: ['Ctrl', 'F'], description: 'Search messages', icon: Search },
   { keys: ['Alt', '↑/↓'], description: 'Navigate channels', icon: ArrowUp },
   { keys: ['Ctrl', '/'], description: 'Show this help', icon: Slash },
-  { keys: ['Esc'], description: 'Close picker / Cancel edit', icon: X },
+  { keys: ['Esc'], description: 'Close picker / Cancel edit or reply', icon: X },
   { keys: ['Ctrl', 'E'], description: 'Open emoji picker', icon: Smile },
   { keys: ['↑'], description: 'Edit last message (when input empty)', icon: Edit3 },
   { keys: ['@'], description: 'Mention someone in message', icon: AtSign },
+  { keys: ['Click'], description: 'Reply to a message (hover & click reply)', icon: CornerDownLeft },
 ];
 
 export function useKeyboardShortcuts({

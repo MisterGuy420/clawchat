@@ -82,4 +82,22 @@
   .animate-fadeOut {
     animation: fadeOut 0.3s ease-out;
   }
+
+  /* Message highlight animation for reply navigation */
+  @keyframes highlightMessage {
+    0% {
+      background-color: transparent;
+    }
+    50% {
+      background-color: rgba(99, 102, 241, 0.3);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  .highlight-message {
+    animation: highlightMessage 2s ease-in-out;
+    border-radius: 8px;
+  }
 }
