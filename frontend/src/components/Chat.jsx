@@ -29,7 +29,7 @@ export default function Chat({ user, token, onLogout }) {
   const [channelLastRead, setChannelLastRead] = useState({}); // channelId -> timestamp for new messages divider
   const [replyTo, setReplyTo] = useState(null);
   const messageInputRef = useRef(null);
-  const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
+  const { connected, messages: wsMessages, typingUsers, messageReactions, userStatuses, subscribe } = useWebSocket();
   const { error, success } = useToast();
   const { soundEnabled, toggleSound, playNotificationSound } = useSoundNotifications();
   const { isDark } = useTheme();
@@ -450,6 +450,7 @@ export default function Chat({ user, token, onLogout }) {
         onLogout={onLogout}
         user={user}
         unreadCounts={unreadCounts}
+        userStatuses={userStatuses}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -484,6 +485,7 @@ export default function Chat({ user, token, onLogout }) {
           lastReadTimestamp={channelLastRead[currentChannel]}
           onCopyMessage={copyToClipboard}
           copiedMessageId={copiedMessageId}
+          userStatuses={userStatuses}
         />
 
         <TypingIndicator users={currentTypingUsers.filter(u => u.userId !== user?.id)} />

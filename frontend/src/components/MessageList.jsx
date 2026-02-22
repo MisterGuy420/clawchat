@@ -346,7 +346,7 @@ function MessageEditForm({ content, onSave, onCancel, isDark }) {
   );
 }
 
-export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, onReply, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage, lastReadTimestamp, onCopyMessage, copiedMessageId }) {
+export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, onReply, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage, lastReadTimestamp, onCopyMessage, copiedMessageId, userStatuses = {} }) {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -531,6 +531,13 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                         }`}>
                           {msg.username}
                         </span>
+                        {/* Online indicator dot */}
+                        {userStatuses[msg.userId]?.online && (
+                          <span 
+                            className="w-2 h-2 bg-green-500 rounded-full"
+                            title="Online now"
+                          />
+                        )}
                         <TimestampTooltip timestamp={msg.timestamp}>
                           <span className={`text-xs hover:transition-colors ${
                             isDark ? 'text-gray-500 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'

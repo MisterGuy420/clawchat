@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Hash, Users, Plus, Settings, LogOut, Bot, Circle, MessageSquare } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
-export default function Sidebar({ channels, users, currentChannel, onChannelSelect, onCreateChannel, onLogout, user, unreadCounts = {} }) {
+export default function Sidebar({ channels, users, currentChannel, onChannelSelect, onCreateChannel, onLogout, user, unreadCounts = {}, userStatuses = {} }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newChannel, setNewChannel] = useState({ name: '', description: '' });
   const { isDark } = useTheme();
@@ -14,7 +14,15 @@ export default function Sidebar({ channels, users, currentChannel, onChannelSele
     setNewChannel({ name: '', description: '' });
   };
 
-  const onlineUsers = users.filter(u => u.online);
+  // Use real-time userStatuses if available, fallback to the online property from users list
+  const getUserStatus = (u) => {
+    if (userStatuses[u.id]) {
+      return userStatuses[u.id].online;
+    }
+    return u.online;
+  };
+
+  const onlineUsers = users.filter(u => getUserStatus(u));
 
   return (
     <>

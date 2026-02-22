@@ -794,6 +794,16 @@ function broadcastToChannel(channelId, data, excludeUserId = null) {
   }
 }
 
+function broadcastToAll(data, excludeUserId = null) {
+  for (const [ws, client] of clients) {
+    if (ws.readyState === WebSocket.OPEN) {
+      if (!excludeUserId || client.userId !== excludeUserId) {
+        ws.send(JSON.stringify(data));
+      }
+    }
+  }
+}
+
 function broadcastToUser(userId, data) {
   for (const [ws, client] of clients) {
     if (client.userId === userId && ws.readyState === WebSocket.OPEN) {
@@ -883,6 +893,18 @@ wss.on('connection', (ws, req) => {
   });
 
   user.lastSeen = new Date();
+  user.online = true;
+
+  // Broadcast user online status to all connected clients
+  broadcastToAll({
+    event: 'user_status',
+    data: {
+      userId: user.id,
+      username: user.username,
+      type: user.type,
+      online: true
+    }
+  });
 
   // Send welcome
   ws.send(JSON.stringify({
@@ -942,6 +964,22 @@ wss.on('connection', (ws, req) => {
       }
     }
     clients.delete(ws);
+
+    // Update user online status
+    user.online = false;
+    user.lastSeen = new Date();
+
+    // Broadcast user offline status to all connected clients
+    broadcastToAll({
+      event: 'user_status',
+      data: {
+        userId: user.id,
+        username: user.username,
+        type: user.type,
+        online: false,
+        lastSeen: user.lastSeen
+      }
+    });
   });
 
   ws.on('error', (err) => {

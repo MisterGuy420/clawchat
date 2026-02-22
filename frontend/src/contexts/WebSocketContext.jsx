@@ -9,8 +9,11 @@ export function WebSocketProvider({ children, token }) {
   const [currentChannel, setCurrentChannel] = useState('general');
   const [typingUsers, setTypingUsers] = useState({}); // channelId -> { userId, username, userType }
   const [messageReactions, setMessageReactions] = useState({}); // messageId -> { emoji: [{userId, username, type}] }
+  const [userStatuses, setUserStatuses] = useState({}); // userId -> { online, lastSeen }
   const reconnectTimeout = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const reconnectAttempts = useRef(0);
+  const maxReconnectDelay = 30000; // Max 30 seconds between reconnects
 
   const connect = useCallback(() => {
     const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws?token=${token}`;
@@ -20,6 +23,7 @@ export function WebSocketProvider({ children, token }) {
     ws.current.onopen = () => {
       console.log('[ClawChat] WebSocket connected');
       setConnected(true);
+      reconnectAttempts.current = 0;
       // Subscribe to current channel
       ws.current.send(JSON.stringify({
         event: 'subscribe',
@@ -121,6 +125,13 @@ export function WebSocketProvider({ children, token }) {
                 }
               : msg
           ));
+        } else if (data.event === 'user_status') {
+          // Update user online status
+          const { userId, online, lastSeen } = data.data;
+          setUserStatuses(prev => ({
+            ...prev,
+            [userId]: { online, lastSeen: lastSeen ? new Date(lastSeen) : new Date() }
+          }));
         }
       } catch (err) {
         console.error('[ClawChat] Message parse error:', err);
@@ -130,8 +141,11 @@ export function WebSocketProvider({ children, token }) {
     ws.current.onclose = () => {
       console.log('[ClawChat] WebSocket disconnected');
       setConnected(false);
-      // Reconnect after 3 seconds
-      reconnectTimeout.current = setTimeout(connect, 3000);
+      // Exponential backoff for reconnection
+      reconnectAttempts.current += 1;
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current - 1), maxReconnectDelay);
+      console.log(`[ClawChat] Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current})`);
+      reconnectTimeout.current = setTimeout(connect, delay);
     };
 
     ws.current.onerror = (err) => {
@@ -179,6 +193,7 @@ export function WebSocketProvider({ children, token }) {
     currentChannel,
     typingUsers,
     messageReactions,
+    userStatuses,
     subscribe,
     sendTyping
   };
