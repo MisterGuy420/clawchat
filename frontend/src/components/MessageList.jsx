@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import LinkifiedText from './LinkifiedText';
@@ -106,6 +106,23 @@ function ReplyPreview({ replyData, isDark, onClick }) {
       }`}>
         {replyData.content}
       </span>
+    </div>
+  );
+}
+
+// New Messages divider component
+function NewMessagesDivider({ isDark }) {
+  return (
+    <div className="flex items-center justify-center my-4">
+      <div className={`h-px flex-1 ${isDark ? 'bg-claw-500/50' : 'bg-claw-400/50'}`} />
+      <span className={`mx-4 text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+        isDark 
+          ? 'bg-claw-500/20 text-claw-400 border border-claw-500/30' 
+          : 'bg-claw-100 text-claw-600 border border-claw-300'
+      }`}>
+        New Messages
+      </span>
+      <div className={`h-px flex-1 ${isDark ? 'bg-claw-500/50' : 'bg-claw-400/50'}`} />
     </div>
   );
 }
@@ -329,7 +346,7 @@ function MessageEditForm({ content, onSave, onCancel, isDark }) {
   );
 }
 
-export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, onReply, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage }) {
+export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, onReply, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage, lastReadTimestamp }) {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -357,6 +374,26 @@ export default function MessageList({ messages, loading, currentUser, reactions,
       setNewMessageCount(0);
     }
   };
+
+  // Find the index where new messages begin (after lastReadTimestamp)
+  const findNewMessagesDividerIndex = useCallback(() => {
+    if (!lastReadTimestamp || messages.length === 0 || isSearching) return -1;
+    
+    const lastRead = new Date(lastReadTimestamp);
+    // Find the first message that comes after lastReadTimestamp
+    for (let i = 0; i < messages.length; i++) {
+      const msgTime = new Date(messages[i].timestamp);
+      if (msgTime > lastRead) {
+        // Make sure it's not from the current user (we don't want divider for our own messages)
+        if (messages[i].userId !== currentUser?.id) {
+          return i;
+        }
+      }
+    }
+    return -1;
+  }, [lastReadTimestamp, messages, isSearching, currentUser?.id]);
+
+  const newMessagesIndex = findNewMessagesDividerIndex();
 
   // Scroll to bottom function
   const scrollToBottom = () => {
@@ -440,41 +477,51 @@ export default function MessageList({ messages, loading, currentUser, reactions,
     <div ref={containerRef} onScroll={handleScroll} className={`flex-1 overflow-y-auto scrollbar-thin p-4 relative ${
       isDark ? '' : 'bg-gray-100'
     }`}>
-      {Object.entries(groupedMessages).map(([date, dateMessages]) => (
-        <div key={date}>
-          <div className="flex items-center justify-center my-4">
-            <div className={`h-px flex-1 ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
-            <span className={`mx-4 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(dateMessages[0].timestamp)}</span>
-            <div className={`h-px flex-1 ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
-          </div>
+      {(() => {
+        // Track global message index across all date groups
+        let globalIndex = 0;
+        return Object.entries(groupedMessages).map(([date, dateMessages]) => (
+          <div key={date}>
+            <div className="flex items-center justify-center my-4">
+              <div className={`h-px flex-1 ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
+              <span className={`mx-4 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(dateMessages[0].timestamp)}</span>
+              <div className={`h-px flex-1 ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
+            </div>
 
-          <div className="space-y-1">
-            {dateMessages.map((msg, idx) => {
-              const prevMsg = idx > 0 ? dateMessages[idx - 1] : null;
-              const isConsecutive = prevMsg && prevMsg.userId === msg.userId;
-              const isMe = msg.userId === currentUser?.id;
-              const msgReactions = reactions?.[msg.id] || msg.reactions || {};
-              const isEditing = editingMessageId === msg.id;
+            <div className="space-y-1">
+              {dateMessages.map((msg, idx) => {
+                const currentGlobalIndex = globalIndex++;
+                const prevMsg = idx > 0 ? dateMessages[idx - 1] : null;
+                const isConsecutive = prevMsg && prevMsg.userId === msg.userId;
+                const isMe = msg.userId === currentUser?.id;
+                const msgReactions = reactions?.[msg.id] || msg.reactions || {};
+                const isEditing = editingMessageId === msg.id;
 
-              return (
-                <div
-                  key={msg.id}
-                  id={`message-${msg.id}`}
-                  className={`message-row flex gap-3 group ${isConsecutive ? 'mt-0.5' : 'mt-4'}`}
-                >
-                  {!isConsecutive ? (
-                    <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
-                      msg.userType === 'agent' ? 'bg-agent' : 'bg-claw-600'
-                    }`}>
-                      {msg.userType === 'agent' ? (
-                        <Bot className="w-5 h-5 text-white" />
+                // Check if we should show new messages divider before this message
+                const showNewMessagesDivider = currentGlobalIndex === newMessagesIndex;
+
+                return (
+                  <React.Fragment key={msg.id}>
+                    {showNewMessagesDivider && (
+                      <NewMessagesDivider isDark={isDark} />
+                    )}
+                    <div
+                      id={`message-${msg.id}`}
+                      className={`message-row flex gap-3 group ${isConsecutive ? 'mt-0.5' : 'mt-4'}`}
+                    >
+                      {!isConsecutive ? (
+                        <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
+                          msg.userType === 'agent' ? 'bg-agent' : 'bg-claw-600'
+                        }`}>
+                          {msg.userType === 'agent' ? (
+                            <Bot className="w-5 h-5 text-white" />
+                          ) : (
+                            <User className="w-5 h-5 text-white" />
+                          )}
+                        </div>
                       ) : (
-                        <User className="w-5 h-5 text-white" />
+                        <div className="w-10 flex-shrink-0" />
                       )}
-                    </div>
-                  ) : (
-                    <div className="w-10 flex-shrink-0" />
-                  )}
 
                   <div className="flex-1 min-w-0">
                     {!isConsecutive && (
@@ -585,11 +632,13 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                     )}
                   </div>
                 </div>
+              </React.Fragment>
               );
             })}
           </div>
         </div>
-      ))}
+      ));
+      })()}
 
       {messages.length === 0 && (
         <div className={`flex flex-col items-center justify-center h-full ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>

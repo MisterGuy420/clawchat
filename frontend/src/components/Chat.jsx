@@ -25,6 +25,7 @@ export default function Chat({ user, token, onLogout }) {
   const [unreadCounts, setUnreadCounts] = useState({});
   const [pendingMessages, setPendingMessages] = useState([]); // Messages being sent
   const [failedMessages, setFailedMessages] = useState([]); // Messages that failed to send
+  const [channelLastRead, setChannelLastRead] = useState({}); // channelId -> timestamp for new messages divider
   const [replyTo, setReplyTo] = useState(null);
   const messageInputRef = useRef(null);
   const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
@@ -38,12 +39,29 @@ export default function Chat({ user, token, onLogout }) {
     messageInputRef.current?.focus();
   }, []);
 
+  const handleChannelSelect = useCallback((channelId) => {
+    // Save timestamp for the channel we're leaving
+    if (channelId !== currentChannel) {
+      setChannelLastRead(prev => ({
+        ...prev,
+        [currentChannel]: new Date()
+      }));
+      setCurrentChannel(channelId);
+      setSearchQuery('');
+    }
+  }, [currentChannel]);
+
   const navigateChannel = useCallback((index) => {
     if (index >= 0 && index < channels.length) {
+      // Save timestamp for the channel we're leaving
+      setChannelLastRead(prev => ({
+        ...prev,
+        [currentChannel]: new Date()
+      }));
       setCurrentChannel(channels[index].id);
       setSearchQuery(''); // Clear search when switching channels
     }
-  }, [channels]);
+  }, [channels, currentChannel]);
 
   const toggleEmojiPicker = useCallback(() => {
     setEmojiPickerOpen(prev => !prev);
@@ -425,7 +443,7 @@ export default function Chat({ user, token, onLogout }) {
         channels={channels}
         users={users}
         currentChannel={currentChannel}
-        onChannelSelect={setCurrentChannel}
+        onChannelSelect={handleChannelSelect}
         onCreateChannel={createChannel}
         onLogout={onLogout}
         user={user}
@@ -461,6 +479,7 @@ export default function Chat({ user, token, onLogout }) {
           failedMessages={failedMessages}
           onRetryMessage={retryMessage}
           onCancelFailedMessage={cancelFailedMessage}
+          lastReadTimestamp={channelLastRead[currentChannel]}
         />
 
         <TypingIndicator users={currentTypingUsers.filter(u => u.userId !== user?.id)} />
