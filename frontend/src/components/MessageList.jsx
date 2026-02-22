@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply, Copy, CheckCheck, FileText, Download, Image as ImageIcon, Film, Music, MessageSquare } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply, Copy, CheckCheck, FileText, Download, Image as ImageIcon, Film, Music, MessageSquare, Link2 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import MarkdownMessage from './MarkdownMessage';
 
@@ -458,6 +458,8 @@ export default function MessageList({ messages, loading, currentUser, reactions,
   const [showJumpButton, setShowJumpButton] = useState(false);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
+  const [copiedLinkId, setCopiedLinkId] = useState(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState(null);
   const lastMessageCountRef = useRef(messages.length);
   const isScrolledRef = useRef(false);
   const { isDark } = useTheme();
@@ -562,6 +564,45 @@ export default function MessageList({ messages, loading, currentUser, reactions,
     setEditingMessageId(null);
   };
 
+  // Copy message permalink to clipboard
+  const copyPermalink = async (messageId) => {
+    const url = `${window.location.origin}${window.location.pathname}#message-${messageId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedLinkId(messageId);
+      setTimeout(() => setCopiedLinkId(null), 2000);
+      return true;
+    } catch (err) {
+      console.error('Failed to copy permalink:', err);
+      return false;
+    }
+  };
+
+  // Handle hash-based navigation to messages
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#message-')) {
+        const messageId = hash.replace('#message-', '');
+        const element = document.getElementById(`message-${messageId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setHighlightedMessageId(messageId);
+          setTimeout(() => setHighlightedMessageId(null), 3000);
+        }
+      }
+    };
+
+    // Check hash on mount and when messages change
+    if (!loading && messages.length > 0) {
+      setTimeout(handleHashChange, 100);
+    }
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [loading, messages]);
+
   if (loading) {
     return (
       <div className={`flex-1 flex items-center justify-center ${isDark ? '' : 'bg-gray-100'}`}>
@@ -613,7 +654,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                     )}
                     <div
                       id={`message-${msg.id}`}
-                      className={`message-row flex gap-3 group ${isConsecutive ? 'mt-0.5' : 'mt-4'} ${isCommand ? 'command-message' : ''}`}
+                      className={`message-row flex gap-3 group ${isConsecutive ? 'mt-0.5' : 'mt-4'} ${isCommand ? 'command-message' : ''} ${highlightedMessageId === msg.id ? 'message-highlight' : ''}`}
                     >
                       {!isConsecutive ? (
                         <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
@@ -695,6 +736,25 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                               <CheckCheck className="w-3.5 h-3.5" />
                             ) : (
                               <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        )}
+                        {!msg.deleted && !isEditing && !isCommand && (
+                          <button
+                            onClick={() => copyPermalink(msg.id)}
+                            className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
+                              copiedLinkId === msg.id
+                                ? 'text-green-400 bg-green-500/10'
+                                : isDark
+                                  ? 'text-gray-600 hover:text-claw-400 hover:bg-claw-500/10'
+                                  : 'text-gray-400 hover:text-claw-500 hover:bg-claw-500/10'
+                            }`}
+                            title={copiedLinkId === msg.id ? 'Link copied!' : 'Copy link to message'}
+                          >
+                            {copiedLinkId === msg.id ? (
+                              <CheckCheck className="w-3.5 h-3.5" />
+                            ) : (
+                              <Link2 className="w-3.5 h-3.5" />
                             )}
                           </button>
                         )}

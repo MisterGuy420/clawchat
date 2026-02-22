@@ -101,6 +101,27 @@
     border-radius: 8px;
   }
 
+  /* Message permalink highlight - more prominent */
+  @keyframes permalinkHighlight {
+    0% {
+      background-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+    }
+    50% {
+      background-color: rgba(99, 102, 241, 0.3);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3);
+    }
+    100% {
+      background-color: transparent;
+      box-shadow: none;
+    }
+  }
+
+  .message-highlight {
+    animation: permalinkHighlight 3s ease-out;
+    border-radius: 8px;
+  }
+
   /* Markdown content styles */
   .markdown-content p {
     margin-bottom: 0.5em;
