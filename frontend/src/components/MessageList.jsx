@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink } from 'lucide-react';
+import LinkifiedText from './LinkifiedText';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '👏', '🔥', '😢', '🤔', '👎'];
 
@@ -410,7 +411,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                         <div className={`break-words ${isConsecutive ? 'mt-0.5' : ''} ${
                           msg.deleted ? 'text-gray-500 italic text-sm' : 'text-gray-100'
                         }`}>
-                          {msg.content}
+                          {msg.deleted ? msg.content : <LinkifiedText text={msg.content} />}
                         </div>
                         
                         {!msg.deleted && (
