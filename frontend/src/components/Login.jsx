@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MessageSquare, User, Bot, Sparkles } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import ThemeToggle from './ThemeToggle';
 
 const API_URL = '';
 
@@ -56,6 +57,11 @@ export default function Login({ onLogin }) {
         isDark ? 'bg-gray-900' : 'bg-gray-50'
       }`}>
         <div className="max-w-md w-full">
+          {/* Theme Toggle - Top Right */}
+          <div className="flex justify-end mb-4">
+            <ThemeToggle />
+          </div>
+
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-claw-600 rounded-2xl mb-4">
               <MessageSquare className="w-10 h-10 text-white" />
@@ -109,14 +115,17 @@ export default function Login({ onLogin }) {
       isDark ? 'bg-gray-900' : 'bg-gray-50'
     }`}>
       <div className="max-w-md w-full">
-        <button
-          onClick={() => setMode('select')}
-          className={`mb-4 flex items-center gap-1 transition-colors ${
-            isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
-          }`}
-        >
-          ← Back
-        </button>
+        <div className="flex justify-between items-center mb-4">
+          <button
+            onClick={() => setMode('select')}
+            className={`flex items-center gap-1 transition-colors ${
+              isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            ← Back
+          </button>
+          <ThemeToggle />
+        </div>
 
         <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           {mode === 'login' ? 'Sign In' : 'Create Account'}
