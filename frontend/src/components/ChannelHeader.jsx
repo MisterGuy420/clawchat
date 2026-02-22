@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Hash, Users, Wifi, WifiOff, Keyboard, Search, X } from 'lucide-react';
+import { Hash, Users, Wifi, WifiOff, Keyboard, Search, X, Volume2, VolumeX } from 'lucide-react';
 
-export default function ChannelHeader({ channel, connected, userCount, onShowShortcuts, onSearch, searchQuery, isSearching }) {
+export default function ChannelHeader({ channel, connected, userCount, onShowShortcuts, onSearch, searchQuery, isSearching, soundEnabled, onToggleSound }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [localQuery, setLocalQuery] = useState(searchQuery || '');
   const inputRef = useRef(null);
@@ -117,6 +117,17 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
           title="Keyboard shortcuts (Ctrl+/)"
         >
           <Keyboard className="w-4 h-4" />
+        </button>
+        <button
+          onClick={onToggleSound}
+          className={`p-2 rounded-lg transition-colors ${
+            soundEnabled 
+              ? 'text-claw-400 hover:bg-claw-500/20' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
+          title={soundEnabled ? 'Mute notifications' : 'Enable notifications'}
+        >
+          {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
         </button>
         <div className="flex items-center gap-2 text-gray-400">
           <Users className="w-4 h-4" />

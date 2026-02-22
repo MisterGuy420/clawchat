@@ -7,6 +7,7 @@ import TypingIndicator from './TypingIndicator';
 import KeyboardShortcutsHelp, { useKeyboardShortcuts } from './KeyboardShortcuts';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useToast } from '../contexts/ToastContext';
+import useSoundNotifications from '../hooks/useSoundNotifications';
 
 const API_URL = '';
 
@@ -24,6 +25,7 @@ export default function Chat({ user, token, onLogout }) {
   const messageInputRef = useRef(null);
   const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
   const { error, success } = useToast();
+  const { soundEnabled, toggleSound, playNotificationSound } = useSoundNotifications();
 
   const currentChannelIndex = channels.findIndex(c => c.id === currentChannel);
 
@@ -94,15 +96,23 @@ export default function Chat({ user, token, onLogout }) {
         } else {
           setMessages(prev => [...prev, latest]);
         }
+        
+        // Play sound notification for messages from other users
+        if (latest.userId !== user?.id) {
+          playNotificationSound();
+        }
       } else if (latest.userId !== user?.id) {
         // Message in another channel - increment unread count
         setUnreadCounts(prev => ({
           ...prev,
           [latest.channelId]: (prev[latest.channelId] || 0) + 1
         }));
+        
+        // Also play sound for messages in other channels
+        playNotificationSound();
       }
     }
-  }, [wsMessages, currentChannel, searchQuery, user?.id]);
+  }, [wsMessages, currentChannel, searchQuery, user?.id, playNotificationSound]);
 
   const fetchChannels = async () => {
     try {
@@ -369,6 +379,8 @@ export default function Chat({ user, token, onLogout }) {
           onSearch={handleSearch}
           searchQuery={searchQuery}
           isSearching={isSearching}
+          soundEnabled={soundEnabled}
+          onToggleSound={toggleSound}
         />
 
         <MessageList
