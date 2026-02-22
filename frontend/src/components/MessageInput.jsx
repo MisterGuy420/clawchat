@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Send, Smile, Paperclip, X, Image as ImageIcon, Keyboard, AtSign, Reply, Loader2 } from 'lucide-react';
+import { Send, Smile, Paperclip, X, Image as ImageIcon, Keyboard, AtSign, Reply, Loader2, Bold, Italic, Code, Strikethrough } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useClipboard } from '../hooks/useClipboard';
 import { useTheme } from '../contexts/ThemeContext';
@@ -69,6 +69,84 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
       sendTyping(channelId, false);
     }, 3000);
   }, [channelId, sendTyping]);
+
+  // Format text helper - wraps selected text or inserts at cursor
+  const formatText = useCallback((before, after = before) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = message.substring(start, end);
+    const hasSelection = start !== end;
+
+    let newText;
+    let newCursorPos;
+
+    if (hasSelection) {
+      // Wrap selected text
+      newText = message.substring(0, start) + before + selectedText + after + message.substring(end);
+      newCursorPos = end + before.length + after.length;
+    } else {
+      // Insert at cursor
+      newText = message.substring(0, start) + before + after + message.substring(end);
+      newCursorPos = start + before.length;
+    }
+
+    setMessage(newText);
+
+    // Focus back and set cursor position
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+
+    handleTyping();
+  }, [message, handleTyping]);
+
+  const insertBold = useCallback(() => formatText('**', '**'), [formatText]);
+  const insertItalic = useCallback(() => formatText('_', '_'), [formatText]);
+  const insertStrikethrough = useCallback(() => formatText('~~', '~~'), [formatText]);
+
+  const insertCode = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = message.substring(start, end);
+    const hasSelection = start !== end;
+
+    let newText;
+    let newCursorPos;
+
+    if (hasSelection) {
+      // Check if selection has multiple lines
+      const hasNewlines = selectedText.includes('\n');
+      if (hasNewlines) {
+        // Multi-line code block
+        newText = message.substring(0, start) + '```\n' + selectedText + '\n```' + message.substring(end);
+        newCursorPos = end + 8;
+      } else {
+        // Inline code
+        newText = message.substring(0, start) + '`' + selectedText + '`' + message.substring(end);
+        newCursorPos = end + 2;
+      }
+    } else {
+      // Insert inline code at cursor
+      newText = message.substring(0, start) + '`' + message.substring(end);
+      newCursorPos = start + 1;
+    }
+
+    setMessage(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+
+    handleTyping();
+  }, [message, handleTyping]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -341,6 +419,65 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
           </button>
         </div>
       )}
+
+      {/* Formatting Toolbar */}
+      <div className={`flex items-center gap-1 mb-2 px-2 py-1.5 rounded-lg ${
+        isDark ? 'bg-gray-700/50' : 'bg-gray-100'
+      }`}>
+        <span className={`text-xs mr-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Format:</span>
+        <button
+          type="button"
+          onClick={insertBold}
+          className={`p-1.5 rounded transition-colors ${
+            isDark 
+              ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+          }`}
+          title="Bold"
+        >
+          <Bold className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={insertItalic}
+          className={`p-1.5 rounded transition-colors ${
+            isDark 
+              ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+          }`}
+          title="Italic"
+        >
+          <Italic className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={insertCode}
+          className={`p-1.5 rounded transition-colors ${
+            isDark 
+              ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+          }`}
+          title="Code"
+        >
+          <Code className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={insertStrikethrough}
+          className={`p-1.5 rounded transition-colors ${
+            isDark 
+              ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+          }`}
+          title="Strikethrough"
+        >
+          <Strikethrough className="w-4 h-4" />
+        </button>
+        <div className={`w-px h-4 mx-2 ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`} />
+        <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+          Select text or click to insert
+        </span>
+      </div>
 
       <form onSubmit={handleSubmit} className="flex gap-2 relative">
         <div 
