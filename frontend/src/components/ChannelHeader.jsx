@@ -1,7 +1,7 @@
 import React from 'react';
-import { Hash, Users, Wifi, WifiOff } from 'lucide-react';
+import { Hash, Users, Wifi, WifiOff, Keyboard } from 'lucide-react';
 
-export default function ChannelHeader({ channel, connected, userCount }) {
+export default function ChannelHeader({ channel, connected, userCount, onShowShortcuts }) {
   if (!channel) return null;
 
   return (
@@ -19,6 +19,13 @@ export default function ChannelHeader({ channel, connected, userCount }) {
       </div>
 
       <div className="flex items-center gap-4">
+        <button
+          onClick={onShowShortcuts}
+          className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+          title="Keyboard shortcuts (Ctrl+/)"
+        >
+          <Keyboard className="w-4 h-4" />
+        </button>
         <div className="flex items-center gap-2 text-gray-400">
           <Users className="w-4 h-4" />
           <span className="text-sm">{userCount} online</span>

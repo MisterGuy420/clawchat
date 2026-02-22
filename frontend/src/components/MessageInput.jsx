@@ -1,17 +1,23 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Send, Smile, Paperclip, X, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { Send, Smile, Paperclip, X, Image as ImageIcon, Keyboard } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useClipboard } from '../hooks/useClipboard';
 import EmojiPicker from './EmojiPicker';
 
-export default function MessageInput({ onSend, channelId }) {
+const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emojiPickerOpen, setEmojiPickerOpen }, ref) {
   const [message, setMessage] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef(null);
   const { sendTyping } = useWebSocket();
   const typingTimeoutRef = useRef(null);
   const { attachments, handlePaste, removeAttachment, clearAttachments, hasAttachments } = useClipboard();
   const fileInputRef = useRef(null);
+
+  // Expose focus method to parent via ref
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      textareaRef.current?.focus();
+    }
+  }));
 
   const handleTyping = useCallback(() => {
     if (!channelId) return;
@@ -199,20 +205,20 @@ export default function MessageInput({ onSend, channelId }) {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
                 className={`p-2 rounded-lg transition-colors ${
-                  showEmojiPicker 
+                  emojiPickerOpen 
                     ? 'text-claw-400 bg-claw-500/20' 
                     : 'text-gray-500 hover:text-gray-300 hover:bg-gray-600'
                 }`}
-                title="Add emoji"
+                title="Add emoji (Ctrl+E)"
               >
                 <Smile className="w-5 h-5" />
               </button>
               <EmojiPicker
-                isOpen={showEmojiPicker}
+                isOpen={emojiPickerOpen}
                 onSelect={handleEmojiSelect}
-                onClose={() => setShowEmojiPicker(false)}
+                onClose={() => setEmojiPickerOpen(false)}
               />
             </div>
           </div>
@@ -227,9 +233,20 @@ export default function MessageInput({ onSend, channelId }) {
         </button>
       </form>
 
-      <div className="mt-2 text-xs text-gray-500 text-center">
-        Press Enter to send, Shift+Enter for new line • Paste images directly from clipboard
+      <div className="mt-2 text-xs text-gray-500 text-center flex items-center justify-center gap-2">
+        <span>Press Enter to send, Shift+Enter for new line • Paste images directly</span>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: true }))}
+          className="flex items-center gap-1 text-claw-400 hover:text-claw-300 transition-colors"
+          title="Show keyboard shortcuts"
+        >
+          <Keyboard className="w-3 h-3" />
+          <span>Ctrl+/</span>
+        </button>
       </div>
     </div>
   );
-}
+});
+
+export default MessageInput;

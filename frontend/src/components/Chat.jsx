@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import ChannelHeader from './ChannelHeader';
 import TypingIndicator from './TypingIndicator';
+import KeyboardShortcutsHelp, { useKeyboardShortcuts } from './KeyboardShortcuts';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -15,8 +16,40 @@ export default function Chat({ user, token, onLogout }) {
   const [messages, setMessages] = useState([]);
   const [currentChannel, setCurrentChannel] = useState('general');
   const [loading, setLoading] = useState(true);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const messageInputRef = useRef(null);
   const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
   const { error, success } = useToast();
+
+  const currentChannelIndex = channels.findIndex(c => c.id === currentChannel);
+
+  const focusInput = useCallback(() => {
+    messageInputRef.current?.focus();
+  }, []);
+
+  const navigateChannel = useCallback((index) => {
+    if (index >= 0 && index < channels.length) {
+      setCurrentChannel(channels[index].id);
+    }
+  }, [channels]);
+
+  const toggleEmojiPicker = useCallback(() => {
+    setEmojiPickerOpen(prev => !prev);
+  }, []);
+
+  // Set up keyboard shortcuts
+  useKeyboardShortcuts({
+    onFocusInput: focusInput,
+    onChannelNavigate: navigateChannel,
+    onShowHelp: () => setShowShortcutsHelp(true),
+    onClosePicker: () => setEmojiPickerOpen(false),
+    onToggleEmoji: toggleEmojiPicker,
+    isEmojiOpen: emojiPickerOpen,
+    isEditing: false,
+    channelCount: channels.length,
+    currentChannelIndex
+  });
 
   // Fetch channels
   useEffect(() => {
@@ -245,6 +278,7 @@ export default function Chat({ user, token, onLogout }) {
           channel={currentChannelData}
           connected={connected}
           userCount={users.filter(u => u.online).length}
+          onShowShortcuts={() => setShowShortcutsHelp(true)}
         />
 
         <MessageList
@@ -260,8 +294,19 @@ export default function Chat({ user, token, onLogout }) {
 
         <TypingIndicator users={currentTypingUsers.filter(u => u.userId !== user?.id)} />
 
-        <MessageInput onSend={sendMessage} channelId={currentChannel} />
+        <MessageInput 
+          onSend={sendMessage} 
+          channelId={currentChannel}
+          inputRef={messageInputRef}
+          emojiPickerOpen={emojiPickerOpen}
+          setEmojiPickerOpen={setEmojiPickerOpen}
+        />
       </div>
+
+      <KeyboardShortcutsHelp 
+        isOpen={showShortcutsHelp} 
+        onClose={() => setShowShortcutsHelp(false)} 
+      />
     </div>
   );
 }
