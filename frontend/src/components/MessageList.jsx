@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply, Copy, CheckCheck } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import LinkifiedText from './LinkifiedText';
+import MarkdownMessage from './MarkdownMessage';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '👏', '🔥', '😢', '🤔', '👎'];
 
@@ -634,7 +634,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             ? isDark ? 'text-gray-500 italic text-sm' : 'text-gray-400 italic text-sm'
                             : isDark ? 'text-gray-100' : 'text-gray-900'
                         }`}>
-                          {msg.deleted ? msg.content : <LinkifiedText text={msg.content} />}
+                          {msg.deleted ? msg.content : <MarkdownMessage text={msg.content} isDark={isDark} />}
                         </div>
 
                         {!msg.deleted && (
@@ -705,7 +705,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                   <Loader2 className={`w-3 h-3 animate-spin ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                 </div>
                 <div className={`break-words ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  <LinkifiedText text={msg.content} />
+                  <MarkdownMessage text={msg.content} isDark={isDark} />
                 </div>
               </div>
             </div>
@@ -741,7 +741,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                   </span>
                 </div>
                 <div className={`break-words ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  <LinkifiedText text={msg.content} />
+                  <MarkdownMessage text={msg.content} isDark={isDark} />
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <button

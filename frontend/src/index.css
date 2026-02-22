@@ -100,4 +100,36 @@
     animation: highlightMessage 2s ease-in-out;
     border-radius: 8px;
   }
+
+  /* Markdown content styles */
+  .markdown-content p {
+    margin-bottom: 0.5em;
+  }
+  
+  .markdown-content p:last-child {
+    margin-bottom: 0;
+  }
+  
+  .markdown-content > *:first-child {
+    margin-top: 0;
+  }
+  
+  .markdown-content > *:last-child {
+    margin-bottom: 0;
+  }
+  
+  .markdown-content ul > li,
+  .markdown-content ol > li {
+    margin-bottom: 0.25em;
+  }
+  
+  .markdown-content pre {
+    position: relative;
+  }
+  
+  /* Task list styling */
+  .markdown-content input[type="checkbox"] {
+    margin-right: 0.5em;
+    cursor: default;
+  }
 }

@@ -366,7 +366,7 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
       <div className={`mt-2 text-xs text-center flex items-center justify-center gap-2 ${
         isDark ? 'text-gray-500' : 'text-gray-400'
       }`}>
-        <span>Enter to send • Shift+Enter for new line • @ to mention • Hover to reply</span>
+        <span>Enter to send • Shift+Enter for new line • @ to mention • **bold** • `code`</span>
         <button
           type="button"
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: true }))}
