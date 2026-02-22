@@ -2,9 +2,11 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Send, Smile, Paperclip, X, Image as ImageIcon } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useClipboard } from '../hooks/useClipboard';
+import EmojiPicker from './EmojiPicker';
 
 export default function MessageInput({ onSend, channelId }) {
   const [message, setMessage] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef(null);
   const { sendTyping } = useWebSocket();
   const typingTimeoutRef = useRef(null);
@@ -105,6 +107,25 @@ export default function MessageInput({ onSend, channelId }) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  const handleEmojiSelect = (emoji) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newMessage = message.substring(0, start) + emoji + message.substring(end);
+    
+    setMessage(newMessage);
+    
+    // Focus back on textarea and position cursor after the inserted emoji
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+    }, 0);
+    
+    handleTyping();
+  };
+
   return (
     <div className="p-4 bg-gray-800 border-t border-gray-700">
       {/* Attachments preview */}
@@ -175,12 +196,25 @@ export default function MessageInput({ onSend, channelId }) {
             >
               <Paperclip className="w-5 h-5" />
             </button>
-            <button
-              type="button"
-              className="p-2 text-gray-500 hover:text-gray-300 hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              <Smile className="w-5 h-5" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className={`p-2 rounded-lg transition-colors ${
+                  showEmojiPicker 
+                    ? 'text-claw-400 bg-claw-500/20' 
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-600'
+                }`}
+                title="Add emoji"
+              >
+                <Smile className="w-5 h-5" />
+              </button>
+              <EmojiPicker
+                isOpen={showEmojiPicker}
+                onSelect={handleEmojiSelect}
+                onClose={() => setShowEmojiPicker(false)}
+              />
+            </div>
           </div>
         </div>
 
