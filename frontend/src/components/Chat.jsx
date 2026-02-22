@@ -20,6 +20,7 @@ export default function Chat({ user, token, onLogout }) {
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({});
   const messageInputRef = useRef(null);
   const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
   const { error, success } = useToast();
@@ -65,6 +66,7 @@ export default function Chat({ user, token, onLogout }) {
   useEffect(() => {
     fetchChannels();
     fetchUsers();
+    fetchUnreadCounts();
   }, [token]);
 
   // Fetch messages when channel changes or search query changes
@@ -75,6 +77,8 @@ export default function Chat({ user, token, onLogout }) {
       fetchMessages(currentChannel);
     }
     subscribe(currentChannel);
+    // Mark channel as read when switching to it
+    markChannelAsRead(currentChannel);
   }, [currentChannel, searchQuery, subscribe]);
 
   // Handle WebSocket messages
@@ -90,9 +94,15 @@ export default function Chat({ user, token, onLogout }) {
         } else {
           setMessages(prev => [...prev, latest]);
         }
+      } else if (latest.userId !== user?.id) {
+        // Message in another channel - increment unread count
+        setUnreadCounts(prev => ({
+          ...prev,
+          [latest.channelId]: (prev[latest.channelId] || 0) + 1
+        }));
       }
     }
-  }, [wsMessages, currentChannel, searchQuery]);
+  }, [wsMessages, currentChannel, searchQuery, user?.id]);
 
   const fetchChannels = async () => {
     try {
@@ -138,6 +148,35 @@ export default function Chat({ user, token, onLogout }) {
       error('Failed to load messages. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUnreadCounts = async () => {
+    try {
+      const res = await fetch(`${API_URL}/channels/unread`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setUnreadCounts(data.unreadCounts || {});
+    } catch (err) {
+      console.error('Failed to fetch unread counts:', err);
+    }
+  };
+
+  const markChannelAsRead = async (channelId) => {
+    // Optimistically clear unread count
+    setUnreadCounts(prev => ({
+      ...prev,
+      [channelId]: 0
+    }));
+    
+    try {
+      await fetch(`${API_URL}/channels/${channelId}/read`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error('Failed to mark channel as read:', err);
     }
   };
 
@@ -318,6 +357,7 @@ export default function Chat({ user, token, onLogout }) {
         onCreateChannel={createChannel}
         onLogout={onLogout}
         user={user}
+        unreadCounts={unreadCounts}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Hash, Users, Plus, Settings, LogOut, Bot, Circle, MessageSquare } from 'lucide-react';
 
-export default function Sidebar({ channels, users, currentChannel, onChannelSelect, onCreateChannel, onLogout, user }) {
+export default function Sidebar({ channels, users, currentChannel, onChannelSelect, onCreateChannel, onLogout, user, unreadCounts = {} }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newChannel, setNewChannel] = useState({ name: '', description: '' });
 
@@ -43,23 +43,34 @@ export default function Sidebar({ channels, users, currentChannel, onChannelSele
           </div>
 
           <div className="space-y-1">
-            {channels.map(channel => (
-              <button
-                key={channel.id}
-                onClick={() => onChannelSelect(channel.id)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
-                  currentChannel === channel.id
-                    ? 'bg-claw-600 text-white'
-                    : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-                }`}
-              >
-                <Hash className="w-4 h-4" />
-                <span className="flex-1 truncate">{channel.name}</span>
-                {channel.memberCount > 0 && (
-                  <span className="text-xs opacity-70">{channel.memberCount}</span>
-                )}
-              </button>
-            ))}
+            {channels.map(channel => {
+              const unreadCount = unreadCounts[channel.id] || 0;
+              const hasUnread = unreadCount > 0 && currentChannel !== channel.id;
+              
+              return (
+                <button
+                  key={channel.id}
+                  onClick={() => onChannelSelect(channel.id)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
+                    currentChannel === channel.id
+                      ? 'bg-claw-600 text-white'
+                      : hasUnread
+                        ? 'text-white hover:bg-gray-700 font-medium'
+                        : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+                  }`}
+                >
+                  <Hash className={`w-4 h-4 ${hasUnread ? 'text-claw-400' : ''}`} />
+                  <span className="flex-1 truncate">{channel.name}</span>
+                  {hasUnread ? (
+                    <span className="bg-claw-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  ) : channel.memberCount > 0 ? (
+                    <span className="text-xs opacity-70">{channel.memberCount}</span>
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
 
           {/* Online Users */}

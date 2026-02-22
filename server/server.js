@@ -55,6 +55,7 @@ const channels = new Map();
 const messages = new Map();
 const sessions = new Map();
 const typingUsers = new Map(); // channelId -> Set of userIds typing
+const channelReadStatus = new Map(); // userId -> { channelId -> lastReadTimestamp }
 
 // Default channels
 channels.set('general', {
@@ -250,6 +251,54 @@ app.post('/channels/:id/join', authenticate, (req, res) => {
   channel.members.add(req.user.id);
 
   res.json({ success: true });
+});
+
+// Get unread counts for all channels
+app.get('/channels/unread', authenticate, (req, res) => {
+  const userId = req.user.id;
+  const userReadStatus = channelReadStatus.get(userId) || {};
+  
+  const unreadCounts = {};
+  
+  for (const [channelId, channel] of channels) {
+    const lastRead = userReadStatus[channelId];
+    
+    // Count messages after lastRead timestamp
+    let count = 0;
+    for (const msg of messages.values()) {
+      if (msg.channelId === channelId && msg.userId !== userId) {
+        if (!lastRead || msg.timestamp > lastRead) {
+          count++;
+        }
+      }
+    }
+    
+    unreadCounts[channelId] = count;
+  }
+  
+  res.json({ unreadCounts });
+});
+
+// Mark channel as read
+app.post('/channels/:id/read', authenticate, (req, res) => {
+  const channelId = req.params.id;
+  const userId = req.user.id;
+  
+  const channel = channels.get(channelId);
+  if (!channel) {
+    return res.status(404).json({ error: 'Channel not found' });
+  }
+  
+  // Initialize user's read status if needed
+  if (!channelReadStatus.has(userId)) {
+    channelReadStatus.set(userId, {});
+  }
+  
+  // Mark as read with current timestamp
+  const userReadStatus = channelReadStatus.get(userId);
+  userReadStatus[channelId] = new Date();
+  
+  res.json({ success: true, channelId });
 });
 
 // Search messages in a channel
