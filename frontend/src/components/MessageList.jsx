@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply, Copy, CheckCheck, FileText, Download, Image as ImageIcon, Film, Music } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search, ChevronDown, RefreshCw, AlertCircle, Reply, Copy, CheckCheck, FileText, Download, Image as ImageIcon, Film, Music, MessageSquare } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import MarkdownMessage from './MarkdownMessage';
 
@@ -356,6 +356,26 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
   );
 }
 
+// Thread indicator component
+function ThreadIndicator({ count, onClick, isDark }) {
+  if (!count || count === 0) return null;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`mt-1 flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm transition-all ${
+        isDark
+          ? 'bg-claw-600/20 text-claw-400 hover:bg-claw-600/30 border border-claw-600/30'
+          : 'bg-claw-100 text-claw-600 hover:bg-claw-200 border border-claw-300'
+      }`}
+      title="View thread"
+    >
+      <MessageSquare className="w-3.5 h-3.5" />
+      <span>{count} {count === 1 ? 'reply' : 'replies'}</span>
+    </button>
+  );
+}
+
 // Message edit form
 function MessageEditForm({ content, onSave, onCancel, isDark }) {
   const [editContent, setEditContent] = useState(content);
@@ -431,7 +451,7 @@ function MessageEditForm({ content, onSave, onCancel, isDark }) {
   );
 }
 
-export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, onReply, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage, lastReadTimestamp, onCopyMessage, copiedMessageId, userStatuses = {} }) {
+export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, onReply, isSearching, searchQuery, pendingMessages = [], failedMessages = [], onRetryMessage, onCancelFailedMessage, lastReadTimestamp, onCopyMessage, copiedMessageId, userStatuses = {}, onOpenThread }) {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -763,6 +783,15 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             currentUserId={currentUser?.id}
                             onAddReaction={onAddReaction}
                             onRemoveReaction={onRemoveReaction}
+                            isDark={isDark}
+                          />
+                        )}
+                        
+                        {/* Thread indicator */}
+                        {!msg.deleted && !isCommand && onOpenThread && msg.threadReplyCount > 0 && (
+                          <ThreadIndicator
+                            count={msg.threadReplyCount}
+                            onClick={() => onOpenThread(msg)}
                             isDark={isDark}
                           />
                         )}

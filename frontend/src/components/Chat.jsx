@@ -4,6 +4,7 @@ import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import ChannelHeader from './ChannelHeader';
 import TypingIndicator from './TypingIndicator';
+import ThreadView from './ThreadView';
 import KeyboardShortcutsHelp, { useKeyboardShortcuts } from './KeyboardShortcuts';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useToast } from '../contexts/ToastContext';
@@ -28,6 +29,7 @@ export default function Chat({ user, token, onLogout }) {
   const [failedMessages, setFailedMessages] = useState([]); // Messages that failed to send
   const [channelLastRead, setChannelLastRead] = useState({}); // channelId -> timestamp for new messages divider
   const [replyTo, setReplyTo] = useState(null);
+  const [openThread, setOpenThread] = useState(null); // Currently open thread message
   const messageInputRef = useRef(null);
   const { connected, messages: wsMessages, typingUsers, messageReactions, userStatuses, subscribe } = useWebSocket();
   const { error, success } = useToast();
@@ -438,6 +440,14 @@ export default function Chat({ user, token, onLogout }) {
     }
   };
 
+  const handleOpenThread = (message) => {
+    setOpenThread(message);
+  };
+
+  const handleCloseThread = () => {
+    setOpenThread(null);
+  };
+
   return (
     <div className={`h-screen flex overflow-hidden transition-colors duration-200 ${
       isDark ? 'bg-gray-900' : 'bg-gray-100'
@@ -454,7 +464,7 @@ export default function Chat({ user, token, onLogout }) {
         userStatuses={userStatuses}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={`flex flex-col min-w-0 ${openThread ? 'flex-1' : 'flex-1'}`}>
         <ChannelHeader
           channel={currentChannelData}
           connected={connected}
@@ -477,6 +487,7 @@ export default function Chat({ user, token, onLogout }) {
           onDeleteMessage={deleteMessage}
           onEditMessage={editMessage}
           onReply={handleReply}
+          onOpenThread={handleOpenThread}
           isSearching={isSearching}
           searchQuery={searchQuery}
           pendingMessages={pendingMessages}
@@ -503,6 +514,22 @@ export default function Chat({ user, token, onLogout }) {
           token={token}
         />
       </div>
+      
+      {/* Thread View Sidebar */}
+      {openThread && (
+        <ThreadView
+          parentMessage={openThread}
+          channelId={currentChannel}
+          currentUser={user}
+          token={token}
+          onClose={handleCloseThread}
+          onAddReaction={addReaction}
+          onRemoveReaction={removeReaction}
+          onDeleteMessage={deleteMessage}
+          onEditMessage={editMessage}
+          userStatuses={userStatuses}
+        />
+      )}
 
       <KeyboardShortcutsHelp 
         isOpen={showShortcutsHelp} 

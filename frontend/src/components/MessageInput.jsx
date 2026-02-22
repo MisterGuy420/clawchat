@@ -9,7 +9,18 @@ import EmojiPicker from './EmojiPicker';
 import MentionDropdown from './MentionDropdown';
 import EmojiAutocomplete from './EmojiAutocomplete';
 
-const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emojiPickerOpen, setEmojiPickerOpen, users = [], replyTo, onCancelReply, token }, ref) {
+const MessageInput = forwardRef(function MessageInput({ 
+  onSend, 
+  channelId, 
+  emojiPickerOpen, 
+  setEmojiPickerOpen, 
+  users = [], 
+  replyTo, 
+  onCancelReply, 
+  token,
+  placeholder,
+  isThread = false
+}, ref) {
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -331,11 +342,11 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
   };
 
   return (
-    <div className={`p-4 border-t transition-colors duration-200 ${
+    <div className={`border-t transition-colors duration-200 ${
       isDark 
         ? 'bg-gray-800 border-gray-700' 
         : 'bg-white border-gray-200'
-    }`}>
+    } ${isThread ? 'p-2' : 'p-4'}`}>
       {/* Attachments preview */}
       {hasAttachments && (
         <div className="mb-3 flex flex-wrap gap-2">
@@ -420,64 +431,66 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
         </div>
       )}
 
-      {/* Formatting Toolbar */}
-      <div className={`flex items-center gap-1 mb-2 px-2 py-1.5 rounded-lg ${
-        isDark ? 'bg-gray-700/50' : 'bg-gray-100'
-      }`}>
-        <span className={`text-xs mr-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Format:</span>
-        <button
-          type="button"
-          onClick={insertBold}
-          className={`p-1.5 rounded transition-colors ${
-            isDark 
-              ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-          }`}
-          title="Bold"
-        >
-          <Bold className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={insertItalic}
-          className={`p-1.5 rounded transition-colors ${
-            isDark 
-              ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-          }`}
-          title="Italic"
-        >
-          <Italic className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={insertCode}
-          className={`p-1.5 rounded transition-colors ${
-            isDark 
-              ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-          }`}
-          title="Code"
-        >
-          <Code className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={insertStrikethrough}
-          className={`p-1.5 rounded transition-colors ${
-            isDark 
-              ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-          }`}
-          title="Strikethrough"
-        >
-          <Strikethrough className="w-4 h-4" />
-        </button>
-        <div className={`w-px h-4 mx-2 ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`} />
-        <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-          Select text or click to insert
-        </span>
-      </div>
+      {/* Formatting Toolbar - hidden in thread mode */}
+      {!isThread && (
+        <div className={`flex items-center gap-1 mb-2 px-2 py-1.5 rounded-lg ${
+          isDark ? 'bg-gray-700/50' : 'bg-gray-100'
+        }`}>
+          <span className={`text-xs mr-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Format:</span>
+          <button
+            type="button"
+            onClick={insertBold}
+            className={`p-1.5 rounded transition-colors ${
+              isDark 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+            }`}
+            title="Bold"
+          >
+            <Bold className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={insertItalic}
+            className={`p-1.5 rounded transition-colors ${
+              isDark 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+            }`}
+            title="Italic"
+          >
+            <Italic className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={insertCode}
+            className={`p-1.5 rounded transition-colors ${
+              isDark 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+            }`}
+            title="Code"
+          >
+            <Code className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={insertStrikethrough}
+            className={`p-1.5 rounded transition-colors ${
+              isDark 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+            }`}
+            title="Strikethrough"
+          >
+            <Strikethrough className="w-4 h-4" />
+          </button>
+          <div className={`w-px h-4 mx-2 ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`} />
+          <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+            Select text or click to insert
+          </span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex gap-2 relative">
         <div 
@@ -493,14 +506,14 @@ const MessageInput = forwardRef(function MessageInput({ onSend, channelId, emoji
             onKeyDown={handleKeyDown}
             onInput={handleInput}
             onPaste={handlePaste}
-            placeholder="Type a message... (paste images directly)"
+            placeholder={placeholder || "Type a message... (paste images directly)"}
             rows={1}
-            className={`flex-1 bg-transparent px-4 py-3 resize-none focus:outline-none max-h-32 ${
+            className={`flex-1 bg-transparent resize-none focus:outline-none max-h-32 ${
               isDark 
                 ? 'text-white placeholder-gray-500' 
                 : 'text-gray-900 placeholder-gray-400'
-            }`}
-            style={{ minHeight: '48px' }}
+            } ${isThread ? 'px-3 py-2' : 'px-4 py-3'}`}
+            style={{ minHeight: isThread ? '36px' : '48px' }}
           />
           <div className="flex items-center gap-1 p-2">
             <input

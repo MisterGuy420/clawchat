@@ -479,11 +479,67 @@ app.get('/channels/:id/messages', authenticate, (req, res) => {
       userType: user?.type || 'unknown',
       reactions: reactionsWithUsers,
       replyToData: replyData,
+      attachments: m.attachments || [],
+      threadReplyCount: m.threadReplyCount || 0,
+      lastThreadReplyAt: m.lastThreadReplyAt || null
+    });
+  });
+
+  res.json({ messages: messagesWithUser.reverse() });
+});
+
+// Get thread messages for a parent message
+app.get('/channels/:channelId/messages/:messageId/threads', authenticate, (req, res) => {
+  const { channelId, messageId } = req.params;
+
+  const channel = channels.get(channelId);
+  if (!channel) {
+    return res.status(404).json({ error: 'Channel not found' });
+  }
+
+  const parentMessage = messages.get(messageId);
+  if (!parentMessage || parentMessage.channelId !== channelId) {
+    return res.status(404).json({ error: 'Message not found in this channel' });
+  }
+
+  // Get all thread replies
+  const threadMessages = Array.from(messages.values())
+    .filter(m => m.threadId === messageId)
+    .sort((a, b) => a.timestamp - b.timestamp);
+
+  // Add user info to messages
+  const messagesWithUser = threadMessages.map(m => {
+    const user = users.get(m.userId);
+    const reactionsWithUsers = {};
+    if (m.reactions) {
+      for (const [emoji, userIds] of Object.entries(m.reactions)) {
+        reactionsWithUsers[emoji] = Array.from(userIds).map(id => {
+          const reactor = users.get(id);
+          return {
+            userId: id,
+            username: reactor?.username || 'Unknown',
+            type: reactor?.type || 'unknown'
+          };
+        });
+      }
+    }
+    return {
+      ...m,
+      username: user?.username || 'Unknown',
+      userType: user?.type || 'unknown',
+      reactions: reactionsWithUsers,
       attachments: m.attachments || []
     };
   });
 
-  res.json({ messages: messagesWithUser.reverse() });
+  res.json({ 
+    parentMessage: {
+      ...parentMessage,
+      username: users.get(parentMessage.userId)?.username || 'Unknown',
+      userType: users.get(parentMessage.userId)?.type || 'unknown'
+    },
+    messages: messagesWithUser 
+  });
 });
 
 // Send message
@@ -500,13 +556,21 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
     return res.status(404).json({ error: 'Channel not found' });
   }
 
-  const { replyTo } = req.body;
+  const { replyTo, threadId } = req.body;
   
   // Validate replyTo if provided
   if (replyTo) {
     const replyMessage = messages.get(replyTo);
     if (!replyMessage || replyMessage.channelId !== channelId) {
       return res.status(404).json({ error: 'Reply message not found in this channel' });
+    }
+  }
+  
+  // Validate threadId if provided
+  if (threadId) {
+    const threadParent = messages.get(threadId);
+    if (!threadParent || threadParent.channelId !== channelId) {
+      return res.status(404).json({ error: 'Thread parent not found in this channel' });
     }
   }
 
@@ -568,10 +632,20 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
     type: 'text',
     reactions: {}, // emoji -> Set of userIds
     replyTo: replyTo || null,
+    threadId: threadId || null, // Parent thread message ID
     attachments: req.body.attachments || [] // Array of uploaded file metadata
   };
 
   messages.set(message.id, message);
+  
+  // If this is a thread reply, update the parent's thread reply count
+  if (threadId) {
+    const threadParent = messages.get(threadId);
+    if (threadParent) {
+      threadParent.threadReplyCount = (threadParent.threadReplyCount || 0) + 1;
+      threadParent.lastThreadReplyAt = new Date();
+    }
+  }
 
   // Get reply data for broadcast
   let replyData = null;
@@ -587,6 +661,22 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
       };
     }
   }
+  
+  // Get thread parent data if applicable
+  let threadParentData = null;
+  if (message.threadId) {
+    const threadParent = messages.get(message.threadId);
+    if (threadParent) {
+      const parentUser = users.get(threadParent.userId);
+      threadParentData = {
+        id: threadParent.id,
+        content: threadParent.content.slice(0, 100),
+        username: parentUser?.username || 'Unknown',
+        userType: parentUser?.type || 'unknown',
+        threadReplyCount: threadParent.threadReplyCount || 0
+      };
+    }
+  }
 
   // Broadcast to WebSocket clients
   broadcastToChannel(channelId, {
@@ -597,6 +687,7 @@ app.post('/channels/:id/messages', authenticate, (req, res) => {
       userType: req.user.type,
       reactions: {},
       replyToData: replyData,
+      threadParentData: threadParentData,
       attachments: message.attachments || []
     }
   });
