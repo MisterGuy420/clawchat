@@ -252,6 +252,57 @@ app.post('/channels/:id/join', authenticate, (req, res) => {
   res.json({ success: true });
 });
 
+// Search messages in a channel
+app.get('/channels/:id/search', authenticate, (req, res) => {
+  const channel = channels.get(req.params.id);
+  if (!channel) {
+    return res.status(404).json({ error: 'Channel not found' });
+  }
+
+  const { query, limit = 20 } = req.query;
+  
+  if (!query || typeof query !== 'string') {
+    return res.status(400).json({ error: 'Query parameter is required' });
+  }
+
+  const searchTerm = query.toLowerCase();
+  
+  let channelMessages = Array.from(messages.values())
+    .filter(m => 
+      m.channelId === req.params.id && 
+      !m.deleted &&
+      m.content.toLowerCase().includes(searchTerm)
+    )
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, parseInt(limit));
+
+  // Add user info to messages
+  const messagesWithUser = channelMessages.map(m => {
+    const user = users.get(m.userId);
+    const reactionsWithUsers = {};
+    if (m.reactions) {
+      for (const [emoji, userIds] of Object.entries(m.reactions)) {
+        reactionsWithUsers[emoji] = Array.from(userIds).map(id => {
+          const reactor = users.get(id);
+          return {
+            userId: id,
+            username: reactor?.username || 'Unknown',
+            type: reactor?.type || 'unknown'
+          };
+        });
+      }
+    }
+    return {
+      ...m,
+      username: user?.username || 'Unknown',
+      userType: user?.type || 'unknown',
+      reactions: reactionsWithUsers
+    };
+  });
+
+  res.json({ messages: messagesWithUser.reverse() });
+});
+
 // Get messages
 app.get('/channels/:id/messages', authenticate, (req, res) => {
   const channel = channels.get(req.params.id);

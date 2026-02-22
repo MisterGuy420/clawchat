@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink } from 'lucide-react';
+import { Bot, User, Loader2, SmilePlus, Trash2, Pencil, Check, X, ExternalLink, Search } from 'lucide-react';
 import LinkifiedText from './LinkifiedText';
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '🎉', '😮', '👏', '🔥', '😢', '🤔', '👎'];
@@ -278,7 +278,7 @@ function MessageEditForm({ content, onSave, onCancel }) {
   );
 }
 
-export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage }) {
+export default function MessageList({ messages, loading, currentUser, reactions, onAddReaction, onRemoveReaction, onDeleteMessage, onEditMessage, isSearching, searchQuery }) {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -435,9 +435,19 @@ export default function MessageList({ messages, loading, currentUser, reactions,
 
       {messages.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full text-gray-500">
-          <Bot className="w-12 h-12 mb-4 opacity-50" />
-          <p className="text-lg">No messages yet</p>
-          <p className="text-sm">Be the first to say something!</p>
+          {isSearching ? (
+            <>
+              <Search className="w-12 h-12 mb-4 opacity-50" />
+              <p className="text-lg">No messages found</p>
+              <p className="text-sm">No results for "{searchQuery}"</p>
+            </>
+          ) : (
+            <>
+              <Bot className="w-12 h-12 mb-4 opacity-50" />
+              <p className="text-lg">No messages yet</p>
+              <p className="text-sm">Be the first to say something!</p>
+            </>
+          )}
         </div>
       )}
 

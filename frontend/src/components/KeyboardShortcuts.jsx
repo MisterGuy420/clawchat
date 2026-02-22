@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Command, CornerDownLeft, ArrowUp, ArrowDown, Slash, Smile, Edit3, Trash2 } from 'lucide-react';
+import { X, Command, CornerDownLeft, ArrowUp, ArrowDown, Slash, Smile, Edit3, Trash2, Search } from 'lucide-react';
 
 const SHORTCUTS = [
   { keys: ['Ctrl', 'K'], description: 'Focus message input', icon: CornerDownLeft },
+  { keys: ['Ctrl', 'F'], description: 'Search messages', icon: Search },
   { keys: ['Alt', '↑/↓'], description: 'Navigate channels', icon: ArrowUp },
   { keys: ['Ctrl', '/'], description: 'Show this help', icon: Slash },
   { keys: ['Esc'], description: 'Close picker / Cancel edit', icon: X },
@@ -17,6 +18,7 @@ export function useKeyboardShortcuts({
   onClosePicker,
   onToggleEmoji,
   onEditLastMessage,
+  onSearch,
   isEmojiOpen,
   isEditing,
   channelCount,
@@ -31,6 +33,13 @@ export function useKeyboardShortcuts({
       if (ctrlKey && e.key === 'k') {
         e.preventDefault();
         onFocusInput?.();
+        return;
+      }
+
+      // Ctrl/Cmd + F - Search messages
+      if (ctrlKey && e.key === 'f') {
+        e.preventDefault();
+        onSearch?.();
         return;
       }
 
@@ -74,7 +83,7 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onFocusInput, onChannelNavigate, onShowHelp, onClosePicker, onToggleEmoji, onEditLastMessage, isEmojiOpen, isEditing, channelCount, currentChannelIndex]);
+  }, [onFocusInput, onChannelNavigate, onShowHelp, onClosePicker, onToggleEmoji, onEditLastMessage, onSearch, isEmojiOpen, isEditing, channelCount, currentChannelIndex]);
 }
 
 export function KeyboardShortcutsHelp({ isOpen, onClose }) {

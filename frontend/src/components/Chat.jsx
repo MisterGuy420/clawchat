@@ -18,6 +18,8 @@ export default function Chat({ user, token, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const messageInputRef = useRef(null);
   const { connected, messages: wsMessages, typingUsers, messageReactions, subscribe } = useWebSocket();
   const { error, success } = useToast();
@@ -31,11 +33,18 @@ export default function Chat({ user, token, onLogout }) {
   const navigateChannel = useCallback((index) => {
     if (index >= 0 && index < channels.length) {
       setCurrentChannel(channels[index].id);
+      setSearchQuery(''); // Clear search when switching channels
     }
   }, [channels]);
 
   const toggleEmojiPicker = useCallback(() => {
     setEmojiPickerOpen(prev => !prev);
+  }, []);
+
+  const openSearch = useCallback(() => {
+    // This will be handled by ChannelHeader
+    const searchButton = document.querySelector('[title*="Search messages"]');
+    if (searchButton) searchButton.click();
   }, []);
 
   // Set up keyboard shortcuts
@@ -45,6 +54,7 @@ export default function Chat({ user, token, onLogout }) {
     onShowHelp: () => setShowShortcutsHelp(true),
     onClosePicker: () => setEmojiPickerOpen(false),
     onToggleEmoji: toggleEmojiPicker,
+    onSearch: openSearch,
     isEmojiOpen: emojiPickerOpen,
     isEditing: false,
     channelCount: channels.length,
@@ -57,21 +67,32 @@ export default function Chat({ user, token, onLogout }) {
     fetchUsers();
   }, [token]);
 
-  // Fetch messages when channel changes
+  // Fetch messages when channel changes or search query changes
   useEffect(() => {
-    fetchMessages(currentChannel);
+    if (searchQuery) {
+      searchMessages(currentChannel, searchQuery);
+    } else {
+      fetchMessages(currentChannel);
+    }
     subscribe(currentChannel);
-  }, [currentChannel, subscribe]);
+  }, [currentChannel, searchQuery, subscribe]);
 
   // Handle WebSocket messages
   useEffect(() => {
     if (wsMessages.length > 0) {
       const latest = wsMessages[wsMessages.length - 1];
       if (latest.channelId === currentChannel) {
-        setMessages(prev => [...prev, latest]);
+        // If searching, check if the new message matches the search query
+        if (searchQuery) {
+          if (latest.content.toLowerCase().includes(searchQuery.toLowerCase())) {
+            setMessages(prev => [...prev, latest]);
+          }
+        } else {
+          setMessages(prev => [...prev, latest]);
+        }
       }
     }
-  }, [wsMessages, currentChannel]);
+  }, [wsMessages, currentChannel, searchQuery]);
 
   const fetchChannels = async () => {
     try {
@@ -105,6 +126,7 @@ export default function Chat({ user, token, onLogout }) {
 
   const fetchMessages = async (channelId) => {
     setLoading(true);
+    setIsSearching(false);
     try {
       const res = await fetch(`${API_URL}/channels/${channelId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -117,6 +139,31 @@ export default function Chat({ user, token, onLogout }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const searchMessages = async (channelId, query) => {
+    if (!query.trim()) {
+      fetchMessages(channelId);
+      return;
+    }
+    setLoading(true);
+    setIsSearching(true);
+    try {
+      const res = await fetch(`${API_URL}/channels/${channelId}/search?query=${encodeURIComponent(query)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setMessages(data.messages || []);
+    } catch (err) {
+      console.error('Failed to search messages:', err);
+      error('Failed to search messages. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
   };
 
   const sendMessage = async (content) => {
@@ -279,6 +326,9 @@ export default function Chat({ user, token, onLogout }) {
           connected={connected}
           userCount={users.filter(u => u.online).length}
           onShowShortcuts={() => setShowShortcutsHelp(true)}
+          onSearch={handleSearch}
+          searchQuery={searchQuery}
+          isSearching={isSearching}
         />
 
         <MessageList
@@ -290,6 +340,8 @@ export default function Chat({ user, token, onLogout }) {
           onRemoveReaction={removeReaction}
           onDeleteMessage={deleteMessage}
           onEditMessage={editMessage}
+          isSearching={isSearching}
+          searchQuery={searchQuery}
         />
 
         <TypingIndicator users={currentTypingUsers.filter(u => u.userId !== user?.id)} />
