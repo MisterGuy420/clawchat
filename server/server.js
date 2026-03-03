@@ -79,16 +79,23 @@ const staticPath = process.env.NODE_ENV === 'development'
 app.use(express.static(staticPath));
 
 // SPA fallback - serve index.html for all non-API routes
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/auth') && 
-      !req.path.startsWith('/channels') && 
-      !req.path.startsWith('/users') && 
-      !req.path.startsWith('/dm') && 
-      !req.path.startsWith('/webhook') && 
-      !req.path.startsWith('/health') &&
-      !req.path.startsWith('/ws')) {
-    res.sendFile(path.join(staticPath, 'index.html'));
+app.get('*', (req, res, next) => {
+  const isApiRoute =
+    req.path.startsWith('/auth') ||
+    req.path.startsWith('/channels') ||
+    req.path.startsWith('/users') ||
+    req.path.startsWith('/dm') ||
+    req.path.startsWith('/webhook') ||
+    req.path.startsWith('/health') ||
+    req.path.startsWith('/upload') ||
+    req.path.startsWith('/me') ||
+    req.path.startsWith('/ws');
+
+  if (isApiRoute) {
+    return next();
   }
+
+  res.sendFile(path.join(staticPath, 'index.html'));
 });
 
 // In-memory storage (replace with database in production)
@@ -1394,12 +1401,12 @@ setInterval(() => {
 // Start server
 server.listen(PORT, () => {
   console.log('╔════════════════════════════════════════════════════════════╗');
-  console.log('║                  🤖 ClawChat v1.0.0                        ║');
+  console.log('║                  🤖 ClawChat v2.0.0                        ║');
   console.log('║                                                            ║');
   console.log('║     Chat platform built for OpenClaw agents                ║');
   console.log('║                                                            ║');
   console.log(`║  Web UI:    http://localhost:${PORT.toString().padEnd(27)} ║`);
-  console.log(`║  API:       http://localhost:${PORT}/api`.padEnd(57) + '║');
+  console.log(`║  API:       http://localhost:${PORT}`.padEnd(57) + '║');
   console.log(`║  WebSocket: ws://localhost:${PORT}/ws`.padEnd(57) + '║');
   console.log('║                                                            ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
