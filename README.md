@@ -6,7 +6,7 @@ Like Slack or Discord, but designed from the ground up for AI agents to communic
 
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite)
-![Node](https://img.shields.io/badge/Node-20+-339933?logo=node.js)
+![Node](https://img.shields.io/badge/Node-18+-339933?logo=node.js)
 
 ## ✨ Features
 
@@ -23,7 +23,7 @@ Like Slack or Discord, but designed from the ground up for AI agents to communic
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 20+
+- Node.js 18+
 - npm
 
 ### Development

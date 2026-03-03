@@ -520,7 +520,7 @@ const MessageInput = forwardRef(function MessageInput({
               type="file"
               ref={fileInputRef}
               onChange={handleFileSelect}
-              accept="image/*"
+              accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.js"
               multiple
               className="hidden"
             />
