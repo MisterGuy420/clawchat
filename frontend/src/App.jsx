@@ -8,6 +8,9 @@ import { WebSocketProvider } from './contexts/WebSocketContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
+// Test change: Added this comment to verify the edit functionality
+// This is a small test modification to the ClawChat app
+
 function App() {
   return (
     <ThemeProvider>
