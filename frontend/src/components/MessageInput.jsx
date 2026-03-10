@@ -344,8 +344,8 @@ const MessageInput = forwardRef(function MessageInput({
   return (
     <div className={`border-t transition-colors duration-200 ${
       isDark 
-        ? 'bg-gray-800 border-gray-700' 
-        : 'bg-white border-gray-200'
+        ? 'bg-gray-800/95 border-gray-700/50' 
+        : 'bg-white/95 border-gray-200'
     } ${isThread ? 'p-2' : 'p-4'}`}>
       {/* Attachments preview */}
       {hasAttachments && (
@@ -353,9 +353,9 @@ const MessageInput = forwardRef(function MessageInput({
           {attachments.map((attachment) => (
             <div
               key={attachment.id}
-              className={`relative group rounded-lg overflow-hidden border ${
+              className={`relative group rounded-xl overflow-hidden border shadow-sm ${
                 isDark 
-                  ? 'bg-gray-700 border-gray-600' 
+                  ? 'bg-gray-700/50 border-gray-600/50' 
                   : 'bg-gray-100 border-gray-300'
               }`}
             >
@@ -374,7 +374,7 @@ const MessageInput = forwardRef(function MessageInput({
                 type="button"
                 onClick={() => removeAttachment(attachment.id)}
                 disabled={isUploading}
-                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md disabled:opacity-50"
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all shadow-md disabled:opacity-50 hover:scale-110"
                 title="Remove attachment"
               >
                 <X className="w-3 h-3" />
@@ -391,9 +391,9 @@ const MessageInput = forwardRef(function MessageInput({
           
           {/* Uploading indicator */}
           {isUploading && (
-            <div className={`flex items-center justify-center w-20 h-20 rounded-lg border ${
+            <div className={`flex items-center justify-center w-20 h-20 rounded-xl border ${
               isDark 
-                ? 'bg-gray-700 border-gray-600' 
+                ? 'bg-gray-700/50 border-gray-600/50' 
                 : 'bg-gray-100 border-gray-300'
             }`}>
               <Loader2 className={`w-6 h-6 animate-spin ${isDark ? 'text-claw-400' : 'text-claw-500'}`} />
@@ -404,8 +404,8 @@ const MessageInput = forwardRef(function MessageInput({
 
       {/* Reply preview */}
       {replyTo && (
-        <div className={`mb-3 flex items-center gap-2 px-3 py-2 rounded-lg ${
-          isDark ? 'bg-gray-700/50' : 'bg-gray-100'
+        <div className={`mb-3 flex items-center gap-2 px-4 py-3 rounded-xl ${
+          isDark ? 'bg-gray-700/50 border border-gray-600/30' : 'bg-gray-100 border border-gray-200'
         }`}>
           <Reply className={`w-4 h-4 ${isDark ? 'text-claw-400' : 'text-claw-500'}`} />
           <div className="flex-1 min-w-0">
@@ -419,7 +419,7 @@ const MessageInput = forwardRef(function MessageInput({
           <button
             type="button"
             onClick={onCancelReply}
-            className={`p-1 rounded transition-colors ${
+            className={`p-1.5 rounded-lg transition-all duration-200 hover:scale-110 ${
               isDark 
                 ? 'hover:bg-gray-600 text-gray-400' 
                 : 'hover:bg-gray-200 text-gray-500'
@@ -433,38 +433,38 @@ const MessageInput = forwardRef(function MessageInput({
 
       {/* Formatting Toolbar - hidden in thread mode */}
       {!isThread && (
-        <div className={`flex items-center gap-1 mb-2 px-2 py-1.5 rounded-lg ${
-          isDark ? 'bg-gray-700/50' : 'bg-gray-100'
+        <div className={`flex items-center gap-1 mb-3 px-3 py-2 rounded-xl ${
+          isDark ? 'bg-gray-700/30' : 'bg-gray-100'
         }`}>
-          <span className={`text-xs mr-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Format:</span>
+          <span className={`text-xs mr-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Format:</span>
           <button
             type="button"
             onClick={insertBold}
-            className={`p-1.5 rounded transition-colors ${
+            className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
               isDark 
                 ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
             }`}
-            title="Bold"
+            title="Bold (Ctrl+B)"
           >
             <Bold className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={insertItalic}
-            className={`p-1.5 rounded transition-colors ${
+            className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
               isDark 
                 ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
             }`}
-            title="Italic"
+            title="Italic (Ctrl+I)"
           >
             <Italic className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={insertCode}
-            className={`p-1.5 rounded transition-colors ${
+            className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
               isDark 
                 ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -476,7 +476,7 @@ const MessageInput = forwardRef(function MessageInput({
           <button
             type="button"
             onClick={insertStrikethrough}
-            className={`p-1.5 rounded transition-colors ${
+            className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
               isDark 
                 ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -485,18 +485,18 @@ const MessageInput = forwardRef(function MessageInput({
           >
             <Strikethrough className="w-4 h-4" />
           </button>
-          <div className={`w-px h-4 mx-2 ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`} />
+          <div className={`w-px h-5 mx-3 ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`} />
           <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
             Select text or click to insert
           </span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex gap-2 relative">
+      <form onSubmit={handleSubmit} className="flex gap-3 relative">
         <div 
           ref={mentionContainerRef}
-          className={`flex-1 rounded-lg flex items-end transition-colors duration-200 ${
-            isDark ? 'bg-gray-700' : 'bg-gray-100'
+          className={`flex-1 rounded-2xl flex items-end transition-all duration-200 ${
+            isDark ? 'bg-gray-700/50 border border-gray-600/30 focus-within:border-claw-500/50 focus-within:ring-2 focus-within:ring-claw-500/20' : 'bg-gray-100 border border-gray-200 focus-within:border-claw-500/50 focus-within:ring-2 focus-within:ring-claw-500/20'
           }`}
         >
           <textarea
@@ -512,8 +512,8 @@ const MessageInput = forwardRef(function MessageInput({
               isDark 
                 ? 'text-white placeholder-gray-500' 
                 : 'text-gray-900 placeholder-gray-400'
-            } ${isThread ? 'px-3 py-2' : 'px-4 py-3'}`}
-            style={{ minHeight: isThread ? '36px' : '48px' }}
+            } ${isThread ? 'px-3 py-2' : 'px-5 py-3.5'}`}
+            style={{ minHeight: isThread ? '36px' : '52px' }}
           />
           <div className="flex items-center gap-1 p-2">
             <input
@@ -527,11 +527,11 @@ const MessageInput = forwardRef(function MessageInput({
             <button
               type="button"
               onClick={insertAtSymbol}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2.5 rounded-xl transition-all duration-200 hover:scale-110 ${
                 mentionState.isOpen
                   ? 'text-claw-400 bg-claw-500/20'
                   : isDark 
-                    ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600' 
+                    ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' 
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
               }`}
               title="Mention someone (@)"
@@ -541,9 +541,9 @@ const MessageInput = forwardRef(function MessageInput({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2.5 rounded-xl transition-all duration-200 hover:scale-110 ${
                 isDark 
-                  ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600' 
+                  ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' 
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
               }`}
               title="Attach file"
@@ -554,11 +554,11 @@ const MessageInput = forwardRef(function MessageInput({
               <button
                 type="button"
                 onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2.5 rounded-xl transition-all duration-200 hover:scale-110 ${
                   emojiPickerOpen 
                     ? 'text-claw-400 bg-claw-500/20' 
                     : isDark
-                      ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600'
+                      ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
                 }`}
                 title="Add emoji (Ctrl+E)"
@@ -577,7 +577,7 @@ const MessageInput = forwardRef(function MessageInput({
         <button
           type="submit"
           disabled={(!message.trim() && !hasAttachments) || isUploading}
-          className="px-4 bg-claw-600 hover:bg-claw-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center justify-center"
+          className="px-5 bg-gradient-to-r from-claw-500 to-claw-600 hover:from-claw-400 hover:to-claw-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl transition-all duration-200 flex items-center justify-center shadow-glow hover:shadow-glow-lg disabled:shadow-none"
         >
           {isUploading ? (
             <Loader2 className="w-5 h-5 text-white animate-spin" />
@@ -605,7 +605,7 @@ const MessageInput = forwardRef(function MessageInput({
         />
       </form>
 
-      <div className={`mt-2 text-xs text-center flex items-center justify-center gap-2 ${
+      <div className={`mt-2.5 text-xs text-center flex items-center justify-center gap-2 ${
         isDark ? 'text-gray-500' : 'text-gray-400'
       }`}>
         <span>Enter to send • Shift+Enter for new line • @ to mention • : for emoji • **bold** • `code`</span>

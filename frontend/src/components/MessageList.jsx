@@ -56,7 +56,7 @@ function TimestampTooltip({ timestamp, children }) {
       </span>
       {showTooltip && (
         <div
-          className="fixed z-50 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg pointer-events-none whitespace-nowrap"
+          className="fixed z-50 px-2.5 py-1.5 text-xs text-white bg-gray-900/95 backdrop-blur-sm rounded-lg shadow-lg pointer-events-none whitespace-nowrap"
           style={{
             left: tooltipPosition.x,
             top: tooltipPosition.y,
@@ -64,7 +64,7 @@ function TimestampTooltip({ timestamp, children }) {
           }}
         >
           {formatFullTimestamp(timestamp)}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/95" />
         </div>
       )}
     </>
@@ -102,8 +102,8 @@ function AttachmentDisplay({ attachments, isDark }) {
   return (
     <div className="mt-2 space-y-2">
       {attachments.map((file) => (
-        <div key={file.id} className={`rounded-lg overflow-hidden border ${
-          isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+        <div key={file.id} className={`rounded-xl overflow-hidden border shadow-sm ${
+          isDark ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-200'
         }`}>
           {file.mimeType?.startsWith('image/') ? (
             // Image preview with click to enlarge
@@ -116,7 +116,7 @@ function AttachmentDisplay({ attachments, isDark }) {
               <img
                 src={file.url}
                 alt={file.originalName}
-                className="max-w-full max-h-64 object-contain cursor-zoom-in group-hover:opacity-90 transition-opacity"
+                className="max-w-full max-h-64 object-contain cursor-zoom-in group-hover:opacity-90 transition-opacity rounded-lg"
                 loading="lazy"
               />
             </a>
@@ -124,7 +124,7 @@ function AttachmentDisplay({ attachments, isDark }) {
             // Video player
             <video
               controls
-              className="max-w-full max-h-64"
+              className="max-w-full max-h-64 rounded-lg"
               preload="metadata"
             >
               <source src={file.url} type={file.mimeType} />
@@ -132,7 +132,7 @@ function AttachmentDisplay({ attachments, isDark }) {
             </video>
           ) : file.mimeType?.startsWith('audio/') ? (
             // Audio player
-            <audio controls className="w-full p-2" preload="metadata">
+            <audio controls className="w-full p-3" preload="metadata">
               <source src={file.url} type={file.mimeType} />
               Your browser does not support the audio tag.
             </audio>
@@ -144,21 +144,29 @@ function AttachmentDisplay({ attachments, isDark }) {
               target="_blank"
               rel="noopener noreferrer"
               className={`flex items-center gap-3 p-3 hover:bg-opacity-80 transition-colors ${
-                isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'
               }`}
             >
-              <div className={`p-2 rounded-lg ${isDark ? 'bg-gray-700 text-claw-400' : 'bg-gray-200 text-claw-600'}`}>
+              <div className={`p-2.5 rounded-xl ${
+                isDark ? 'bg-gray-700/50 text-claw-400' : 'bg-gray-200 text-claw-600'
+              }`}>
                 {getFileIcon(file.mimeType)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                <p className={`text-sm font-medium truncate ${
+                  isDark ? 'text-gray-200' : 'text-gray-800'
+                }`}>
                   {file.originalName}
                 </p>
-                <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                <p className={`text-xs ${
+                  isDark ? 'text-gray-500' : 'text-gray-400'
+                }`}>
                   {formatFileSize(file.size)}
                 </p>
               </div>
-              <Download className={`w-5 h-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+              <Download className={`w-5 h-5 ${
+                isDark ? 'text-gray-400' : 'text-gray-500'
+              }`} />
             </a>
           )}
         </div>
@@ -174,19 +182,21 @@ function ReplyPreview({ replyData, isDark, onClick }) {
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-2 mb-1 px-2 py-1 rounded cursor-pointer transition-colors ${
+      className={`flex items-center gap-2 mb-2 px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 hover:scale-[1.01] ${
         isDark
-          ? 'bg-gray-700/50 hover:bg-gray-700 border-l-2 border-gray-600'
-          : 'bg-gray-200/50 hover:bg-gray-200 border-l-2 border-gray-300'
+          ? 'bg-gray-700/30 hover:bg-gray-700/50 border-l-2 border-gray-600'
+          : 'bg-gray-200/30 hover:bg-gray-200/50 border-l-2 border-gray-300'
       }`}
     >
-      <Reply className={`w-3 h-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-      <span className={`text-xs font-medium ${
+      <Reply className={`w-3.5 h-3.5 flex-shrink-0 ${
+        isDark ? 'text-gray-500' : 'text-gray-400'
+      }`} />
+      <span className={`text-xs font-medium truncate ${
         replyData.userType === 'agent' ? 'text-agent' : 'text-claw-500'
       }`}>
         {replyData.username}
       </span>
-      <span className={`text-xs truncate max-w-[200px] ${
+      <span className={`text-xs truncate ${
         isDark ? 'text-gray-400' : 'text-gray-500'
       }`}>
         {replyData.content}
@@ -199,15 +209,15 @@ function ReplyPreview({ replyData, isDark, onClick }) {
 function NewMessagesDivider({ isDark }) {
   return (
     <div className="flex items-center justify-center my-4">
-      <div className={`h-px flex-1 ${isDark ? 'bg-claw-500/50' : 'bg-claw-400/50'}`} />
-      <span className={`mx-4 text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+      <div className={`h-px flex-1 ${isDark ? 'bg-claw-500/30' : 'bg-claw-400/30'}`} />
+      <span className={`mx-4 text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full ${
         isDark 
           ? 'bg-claw-500/20 text-claw-400 border border-claw-500/30' 
           : 'bg-claw-100 text-claw-600 border border-claw-300'
       }`}>
         New Messages
       </span>
-      <div className={`h-px flex-1 ${isDark ? 'bg-claw-500/50' : 'bg-claw-400/50'}`} />
+      <div className={`h-px flex-1 ${isDark ? 'bg-claw-500/30' : 'bg-claw-400/30'}`} />
     </div>
   );
 }
@@ -223,10 +233,10 @@ function ReactionPicker({ isOpen, onSelect, onClose, position, isDark }) {
         onClick={onClose}
       />
       <div
-        className={`absolute z-50 border rounded-lg shadow-xl p-2 flex gap-1 ${
+        className={`absolute z-50 border rounded-xl shadow-xl p-2 flex gap-1 ${
           isDark
-            ? 'bg-gray-800 border-gray-600'
-            : 'bg-white border-gray-300'
+            ? 'bg-gray-800/95 backdrop-blur-sm border-gray-700'
+            : 'bg-white/95 backdrop-blur-sm border-gray-300'
         }`}
         style={{
           bottom: position?.bottom || '100%',
@@ -238,7 +248,7 @@ function ReactionPicker({ isOpen, onSelect, onClose, position, isDark }) {
           <button
             key={emoji}
             onClick={() => onSelect(emoji)}
-            className={`w-8 h-8 flex items-center justify-center text-lg rounded transition-colors ${
+            className={`w-9 h-9 flex items-center justify-center text-xl rounded-lg transition-all duration-200 hover:scale-125 ${
               isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
             }`}
             title={`React with ${emoji}`}
@@ -261,17 +271,19 @@ function ReactionBadge({ emoji, users, currentUserId, onToggle, isDark }) {
   return (
     <button
       onClick={() => onToggle(emoji)}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm transition-all ${
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm transition-all duration-200 hover:scale-105 ${
         currentUserReacted
-          ? 'bg-claw-600/30 border border-claw-500 hover:bg-claw-600/50'
+          ? 'bg-claw-500/20 border border-claw-500/40 hover:bg-claw-500/30'
           : isDark
-            ? 'bg-gray-700/50 border border-gray-600 hover:bg-gray-700'
-            : 'bg-gray-200/50 border border-gray-300 hover:bg-gray-200'
+            ? 'bg-gray-700/50 border border-gray-600/50 hover:bg-gray-700'
+            : 'bg-gray-200/50 border border-gray-300/50 hover:bg-gray-200'
       }`}
       title={tooltipText}
     >
       <span>{emoji}</span>
-      <span className={`text-xs ${currentUserReacted ? 'text-claw-300' : isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+      <span className={`text-xs ${
+        currentUserReacted ? 'text-claw-300 font-medium' : isDark ? 'text-gray-400' : 'text-gray-500'
+      }`}>
         {users.length}
       </span>
     </button>
@@ -318,7 +330,7 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
   const hasReactions = reactions && Object.keys(reactions).length > 0;
 
   return (
-    <div className="flex items-center gap-1 mt-1 flex-wrap">
+    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
       {hasReactions && Object.entries(reactions).map(([emoji, users]) => (
         <ReactionBadge
           key={emoji}
@@ -334,7 +346,7 @@ function MessageReactions({ messageId, reactions, currentUserId, onAddReaction, 
         <button
           ref={buttonRef}
           onClick={handleOpenPicker}
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm border border-transparent transition-all opacity-0 group-hover:opacity-100 ${
+          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm border border-transparent transition-all duration-200 opacity-0 group-hover:opacity-100 ${
             isDark
               ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-700/50 hover:border-gray-600'
               : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200/50 hover:border-gray-300'
@@ -363,10 +375,10 @@ function ThreadIndicator({ count, onClick, isDark }) {
   return (
     <button
       onClick={onClick}
-      className={`mt-1 flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm transition-all ${
+      className={`mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 hover:scale-105 ${
         isDark
-          ? 'bg-claw-600/20 text-claw-400 hover:bg-claw-600/30 border border-claw-600/30'
-          : 'bg-claw-100 text-claw-600 hover:bg-claw-200 border border-claw-300'
+          ? 'bg-claw-500/10 text-claw-400 hover:bg-claw-500/20 border border-claw-500/20'
+          : 'bg-claw-100 text-claw-600 hover:bg-claw-200 border border-claw-200'
       }`}
       title="View thread"
     >
@@ -416,34 +428,36 @@ function MessageEditForm({ content, onSave, onCancel, isDark }) {
         value={editContent}
         onChange={(e) => setEditContent(e.target.value)}
         onKeyDown={handleKeyDown}
-        className={`w-full border border-claw-500 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-claw-500 ${
+        className={`w-full border-2 border-claw-500 rounded-xl px-4 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-claw-500/30 ${
           isDark
             ? 'bg-gray-800 text-gray-100'
             : 'bg-white text-gray-900 border-gray-300'
         }`}
         rows={Math.min(5, editContent.split('\n').length + 1)}
-        style={{ minHeight: '40px' }}
+        style={{ minHeight: '44px' }}
       />
-      <div className="flex items-center gap-2 mt-2">
+      <div className="flex items-center gap-2 mt-3">
         <button
           onClick={handleSave}
-          className="flex items-center gap-1 px-3 py-1 bg-claw-600 hover:bg-claw-700 text-white text-sm rounded transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-claw-500 to-claw-600 hover:from-claw-400 hover:to-claw-500 text-white text-sm rounded-xl transition-all duration-200 shadow-sm hover:shadow-glow"
         >
           <Check className="w-3.5 h-3.5" />
           Save
         </button>
         <button
           onClick={onCancel}
-          className={`flex items-center gap-1 px-3 py-1 text-sm rounded transition-colors ${
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-xl transition-all duration-200 ${
             isDark
-              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+              ? 'bg-gray-700/50 hover:bg-gray-700 text-gray-300 border border-gray-600/50'
               : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
           }`}
         >
           <X className="w-3.5 h-3.5" />
           Cancel
         </button>
-        <span className={`text-xs ml-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+        <span className={`text-xs ml-2 ${
+          isDark ? 'text-gray-500' : 'text-gray-400'
+        }`}>
           Press Enter to save, Escape to cancel
         </span>
       </div>
@@ -605,8 +619,13 @@ export default function MessageList({ messages, loading, currentUser, reactions,
 
   if (loading) {
     return (
-      <div className={`flex-1 flex items-center justify-center ${isDark ? '' : 'bg-gray-100'}`}>
-        <Loader2 className="w-8 h-8 text-claw-500 animate-spin" />
+      <div className={`flex-1 flex items-center justify-center ${
+        isDark ? '' : 'bg-gray-100'
+      }`}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-10 h-10 text-claw-500 animate-spin" />
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Loading messages...</p>
+        </div>
       </div>
     );
   }
@@ -628,9 +647,13 @@ export default function MessageList({ messages, loading, currentUser, reactions,
         let globalIndex = 0;
         return Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <div key={date}>
-            <div className="flex items-center justify-center my-4">
+            <div className="flex items-center justify-center my-5">
               <div className={`h-px flex-1 ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
-              <span className={`mx-4 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(dateMessages[0].timestamp)}</span>
+              <span className={`mx-4 text-xs font-medium px-4 py-1 rounded-full ${
+                isDark ? 'bg-gray-800 text-gray-500 border border-gray-700' : 'bg-white text-gray-400 border border-gray-200'
+              }`}>
+                {formatDate(dateMessages[0].timestamp)}
+              </span>
               <div className={`h-px flex-1 ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
             </div>
 
@@ -654,15 +677,25 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                     )}
                     <div
                       id={`message-${msg.id}`}
-                      className={`message-row flex gap-3 group ${isConsecutive ? 'mt-0.5' : 'mt-4'} ${isCommand ? 'command-message' : ''} ${highlightedMessageId === msg.id ? 'message-highlight' : ''}`}
+                      className={`message-row flex gap-3 group ${isConsecutive ? 'mt-0.5' : 'mt-4'} ${isCommand ? 'command-message' : ''} ${highlightedMessageId === msg.id ? 'message-highlight' : ''} ${
+                        isMe && !isCommand ? 'px-3 py-2 rounded-2xl' : ''
+                      } ${
+                        isMe && !isCommand
+                          ? isDark 
+                            ? 'bg-gradient-to-r from-gray-800/50 to-gray-800/30 hover:from-gray-800/70 hover:to-gray-800/50' 
+                            : 'bg-white/50 hover:from-white/80 hover:to-white/60'
+                          : ''
+                      }`}
                     >
                       {!isConsecutive ? (
-                        <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
+                        <div className={`w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-md ${
                           isCommand 
                             ? 'bg-gradient-to-br from-claw-500 to-claw-700' 
                             : msg.userType === 'agent' 
-                              ? 'bg-agent' 
-                              : 'bg-claw-600'
+                              ? 'bg-gradient-to-br from-agent to-agent-dark'
+                              : isMe
+                                ? 'bg-gradient-to-br from-claw-500 to-claw-700'
+                                : 'bg-gradient-to-br from-claw-400 to-claw-600'
                         }`}>
                           {isCommand ? (
                             <Bot className="w-5 h-5 text-white" />
@@ -678,13 +711,15 @@ export default function MessageList({ messages, loading, currentUser, reactions,
 
                   <div className="flex-1 min-w-0">
                     {!isConsecutive && (
-                      <div className="flex items-baseline gap-2">
+                      <div className="flex items-baseline gap-2 mb-1">
                         <span className={`font-semibold text-sm ${
                           isCommand 
                             ? 'text-claw-400' 
                             : msg.userType === 'agent' 
                               ? 'text-agent' 
-                              : 'text-claw-500'
+                              : isMe
+                                ? 'text-claw-500'
+                                : 'text-claw-600'
                         }`}>
                           {isCommand ? '🤖 ClawBot' : msg.username}
                         </span>
@@ -697,20 +732,20 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                         )}
                         <TimestampTooltip timestamp={msg.timestamp}>
                           <span className={`text-xs hover:transition-colors ${
-                            isDark ? 'text-gray-500 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'
+                            isDark ? 'text-gray-600 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'
                           }`}>
                             {formatTime(msg.timestamp)}
                           </span>
                         </TimestampTooltip>
                         {msg.edited && (
-                          <span className={`text-xs italic ${isDark ? 'text-gray-500' : 'text-gray-400'}`} title={msg.editedAt ? formatFullTimestamp(msg.editedAt) : 'Edited'}>
+                          <span className={`text-xs italic ${isDark ? 'text-gray-600' : 'text-gray-400'}`} title={msg.editedAt ? formatFullTimestamp(msg.editedAt) : 'Edited'}>
                             (edited)
                           </span>
                         )}
                         {!msg.deleted && !isEditing && !isCommand && (
                           <button
                             onClick={() => onReply && onReply(msg)}
-                            className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
+                            className={`ml-1 p-1.5 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 ${
                               isDark
                                 ? 'text-gray-600 hover:text-claw-400 hover:bg-claw-500/10'
                                 : 'text-gray-400 hover:text-claw-500 hover:bg-claw-500/10'
@@ -723,7 +758,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                         {!msg.deleted && !isEditing && onCopyMessage && !isCommand && (
                           <button
                             onClick={() => onCopyMessage(msg.content, msg.id)}
-                            className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
+                            className={`ml-1 p-1.5 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 ${
                               copiedMessageId === msg.id
                                 ? 'text-green-400 bg-green-500/10'
                                 : isDark
@@ -742,7 +777,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                         {!msg.deleted && !isEditing && !isCommand && (
                           <button
                             onClick={() => copyPermalink(msg.id)}
-                            className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
+                            className={`ml-1 p-1.5 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 ${
                               copiedLinkId === msg.id
                                 ? 'text-green-400 bg-green-500/10'
                                 : isDark
@@ -762,7 +797,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                           <>
                             <button
                               onClick={() => handleEditStart(msg.id)}
-                              className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
+                              className={`ml-1 p-1.5 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 ${
                                 isDark
                                   ? 'text-gray-600 hover:text-claw-400 hover:bg-claw-500/10'
                                   : 'text-gray-400 hover:text-claw-500 hover:bg-claw-500/10'
@@ -773,7 +808,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                             </button>
                             <button
                               onClick={() => onDeleteMessage && onDeleteMessage(msg.id)}
-                              className={`ml-1 p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${
+                              className={`ml-1 p-1.5 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 ${
                                 isDark
                                   ? 'text-gray-600 hover:text-red-400 hover:bg-red-500/10'
                                   : 'text-gray-400 hover:text-red-500 hover:bg-red-500/10'
@@ -814,7 +849,7 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                         )}
                         <div className={`break-words ${isConsecutive ? 'mt-0.5' : ''} ${
                           msg.deleted
-                            ? isDark ? 'text-gray-500 italic text-sm' : 'text-gray-400 italic text-sm'
+                            ? isDark ? 'text-gray-600 italic text-sm' : 'text-gray-400 italic text-sm'
                             : isCommand
                               ? isDark ? 'text-gray-200' : 'text-gray-800'
                               : isDark ? 'text-gray-100' : 'text-gray-900'
@@ -868,17 +903,21 @@ export default function MessageList({ messages, loading, currentUser, reactions,
       })()}
 
       {messages.length === 0 && (
-        <div className={`flex flex-col items-center justify-center h-full ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+        <div className={`flex flex-col items-center justify-center h-full ${
+          isDark ? 'text-gray-500' : 'text-gray-400'
+        }`}>
           {isSearching ? (
             <>
-              <Search className="w-12 h-12 mb-4 opacity-50" />
-              <p className={`text-lg ${isDark ? '' : 'text-gray-600'}`}>No messages found</p>
+              <Search className="w-14 h-14 mb-4 opacity-40" />
+              <p className={`text-lg font-medium ${isDark ? '' : 'text-gray-600'}`}>No messages found</p>
               <p className="text-sm">No results for "{searchQuery}"</p>
             </>
           ) : (
             <>
-              <Bot className="w-12 h-12 mb-4 opacity-50" />
-              <p className={`text-lg ${isDark ? '' : 'text-gray-600'}`}>No messages yet</p>
+              <div className="w-16 h-16 bg-gradient-to-br from-claw-500/20 to-claw-600/20 rounded-2xl flex items-center justify-center mb-4">
+                <Bot className="w-8 h-8 text-claw-500" />
+              </div>
+              <p className={`text-lg font-medium ${isDark ? '' : 'text-gray-600'}`}>No messages yet</p>
               <p className="text-sm">Be the first to say something!</p>
             </>
           )}
@@ -889,11 +928,13 @@ export default function MessageList({ messages, loading, currentUser, reactions,
 
       {/* Pending Messages */}
       {pendingMessages.length > 0 && (
-        <div className="space-y-2 mt-4">
+        <div className="space-y-3 mt-5">
           {pendingMessages.map((msg) => (
             <div key={msg.id} className="flex gap-3 opacity-70">
-              <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
-                msg.userType === 'agent' ? 'bg-agent' : 'bg-claw-600'
+              <div className={`w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-md ${
+                msg.userType === 'agent' 
+                  ? 'bg-gradient-to-br from-agent to-agent-dark'
+                  : 'bg-gradient-to-br from-claw-500 to-claw-700'
               }`}>
                 {msg.userType === 'agent' ? (
                   <Bot className="w-5 h-5 text-white" />
@@ -902,22 +943,26 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
+                <div className="flex items-baseline gap-2 mb-1">
                   <span className={`font-semibold text-sm ${
                     msg.userType === 'agent' ? 'text-agent' : 'text-claw-500'
                   }`}>
                     {msg.username}
                   </span>
-                  <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{formatTime(msg.timestamp)}</span>
-                  <span className={`text-xs italic ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>(sending...)</span>
-                  <Loader2 className={`w-3 h-3 animate-spin ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                  <span className={`text-xs ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>{formatTime(msg.timestamp)}</span>
+                  <span className={`text-xs italic ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>(sending...)</span>
+                  <Loader2 className={`w-3.5 h-3.5 animate-spin ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                 </div>
                 <div className={`break-words ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   <MarkdownMessage text={msg.content} isDark={isDark} />
                 </div>
                 {msg.attachments?.length > 0 && (
-                  <div className={`mt-2 p-2 rounded-lg border ${isDark ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-100 border-gray-200'}`}>
-                    <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <div className={`mt-3 p-3 rounded-xl border ${
+                    isDark ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-100 border-gray-200'
+                  }`}>
+                    <span className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
                       {msg.attachments.length} file{msg.attachments.length > 1 ? 's' : ''} uploading...
                     </span>
                   </div>
@@ -930,11 +975,13 @@ export default function MessageList({ messages, loading, currentUser, reactions,
 
       {/* Failed Messages */}
       {failedMessages.length > 0 && (
-        <div className="space-y-2 mt-4">
+        <div className="space-y-3 mt-5">
           {failedMessages.map((msg) => (
             <div key={msg.id} className="flex gap-3">
-              <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${
-                msg.userType === 'agent' ? 'bg-agent' : 'bg-claw-600'
+              <div className={`w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-md ${
+                msg.userType === 'agent' 
+                  ? 'bg-gradient-to-br from-agent to-agent-dark'
+                  : 'bg-gradient-to-br from-claw-500 to-claw-700'
               }`}>
                 {msg.userType === 'agent' ? (
                   <Bot className="w-5 h-5 text-white" />
@@ -943,13 +990,13 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
+                <div className="flex items-baseline gap-2 mb-1">
                   <span className={`font-semibold text-sm ${
                     msg.userType === 'agent' ? 'text-agent' : 'text-claw-500'
                   }`}>
                     {msg.username}
                   </span>
-                  <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{formatTime(msg.timestamp)}</span>
+                  <span className={`text-xs ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>{formatTime(msg.timestamp)}</span>
                   <span className="text-xs text-red-400 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     Failed to send
@@ -958,19 +1005,19 @@ export default function MessageList({ messages, loading, currentUser, reactions,
                 <div className={`break-words ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   <MarkdownMessage text={msg.content} isDark={isDark} />
                 </div>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-2">
                   <button
                     onClick={() => onRetryMessage && onRetryMessage(msg)}
-                    className="flex items-center gap-1 px-2 py-1 bg-claw-600 hover:bg-claw-700 text-white text-xs rounded transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-claw-500 to-claw-600 hover:from-claw-400 hover:to-claw-500 text-white text-xs rounded-xl transition-all duration-200 shadow-sm hover:shadow-glow"
                   >
                     <RefreshCw className="w-3 h-3" />
                     Retry
                   </button>
                   <button
                     onClick={() => onCancelFailedMessage && onCancelFailedMessage(msg.id)}
-                    className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl transition-all duration-200 ${
                       isDark
-                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                        ? 'bg-gray-700/50 hover:bg-gray-700 text-gray-300 border border-gray-600/50'
                         : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
                     }`}
                   >
@@ -988,12 +1035,12 @@ export default function MessageList({ messages, loading, currentUser, reactions,
       {showJumpButton && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 bg-claw-600 hover:bg-claw-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-10"
+          className="absolute bottom-6 right-6 flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-claw-500 to-claw-600 hover:from-claw-400 hover:to-claw-500 text-white rounded-2xl shadow-glow hover:shadow-glow-lg transition-all duration-200 hover:scale-105 z-10"
         >
           <ChevronDown className="w-4 h-4" />
-          <span>Jump to bottom</span>
+          <span className="font-medium">Jump to bottom</span>
           {hasNewMessages && newMessageCount > 0 && (
-            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full">
               {newMessageCount > 99 ? '99+' : newMessageCount}
             </span>
           )}
