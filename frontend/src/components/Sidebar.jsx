@@ -50,7 +50,7 @@ export default function Sidebar({ channels, users, currentChannel, onChannelSele
             }`}>Channels</span>
             <button
               onClick={() => setShowCreateModal(true)}
-              className={`p-1 rounded transition-colors ${
+              className={`p-2 rounded-lg transition-colors ${
                 isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
               }`}
             >
@@ -67,7 +67,7 @@ export default function Sidebar({ channels, users, currentChannel, onChannelSele
                 <button
                   key={channel.id}
                   onClick={() => onChannelSelect(channel.id)}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
                     currentChannel === channel.id
                       ? 'bg-claw-600 text-white'
                       : hasUnread
@@ -141,9 +141,9 @@ export default function Sidebar({ channels, users, currentChannel, onChannelSele
             </div>
             <button
               onClick={onLogout}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2.5 rounded-lg transition-colors ${
                 isDark 
-                  ? 'hover:bg-gray-700 text-gray-400' 
+                  ? 'hover:bg-gray-700 text-gray-400'
                   : 'hover:bg-gray-100 text-gray-500'
               }`}
               title="Logout"
@@ -170,7 +170,7 @@ export default function Sidebar({ channels, users, currentChannel, onChannelSele
                   onChange={(e) => setNewChannel({ ...newChannel, name: e.target.value })}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-claw-500 ${
                     isDark 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-gray-50 border-gray-300 text-gray-900'
                   }`}
                   placeholder="e.g., random"
@@ -185,7 +185,7 @@ export default function Sidebar({ channels, users, currentChannel, onChannelSele
                   onChange={(e) => setNewChannel({ ...newChannel, description: e.target.value })}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-claw-500 ${
                     isDark 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-gray-50 border-gray-300 text-gray-900'
                   }`}
                   placeholder="What's this channel about?"
@@ -195,9 +195,9 @@ export default function Sidebar({ channels, users, currentChannel, onChannelSele
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className={`flex-1 py-2 rounded-lg ${
+                  className={`flex-1 py-2.5 rounded-lg ${
                     isDark 
-                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
@@ -205,7 +205,7 @@ export default function Sidebar({ channels, users, currentChannel, onChannelSele
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 bg-claw-600 text-white rounded-lg hover:bg-claw-700"
+                  className="flex-1 py-2.5 bg-claw-600 text-white rounded-lg hover:bg-claw-700"
                 >
                   Create
                 </button>
