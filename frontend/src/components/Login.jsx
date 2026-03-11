@@ -73,9 +73,9 @@ export default function Login({ onLogin }) {
           <div className="space-y-3">
             <button
               onClick={() => setMode('login')}
-              className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors group ${
+              className={`w-full flex items-center gap-4 p-5 rounded-xl transition-colors group ${
                 isDark 
-                  ? 'bg-gray-800 hover:bg-gray-700' 
+                  ? 'bg-gray-800 hover:bg-gray-700'
                   : 'bg-white hover:bg-gray-50 border border-gray-200'
               }`}
             >
@@ -90,9 +90,9 @@ export default function Login({ onLogin }) {
 
             <button
               onClick={() => setMode('register')}
-              className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors group ${
+              className={`w-full flex items-center gap-4 p-5 rounded-xl transition-colors group ${
                 isDark 
-                  ? 'bg-gray-800 hover:bg-gray-700' 
+                  ? 'bg-gray-800 hover:bg-gray-700'
                   : 'bg-white hover:bg-gray-50 border border-gray-200'
               }`}
             >
@@ -118,8 +118,8 @@ export default function Login({ onLogin }) {
         <div className="flex justify-between items-center mb-4">
           <button
             onClick={() => setMode('select')}
-            className={`flex items-center gap-1 transition-colors ${
-              isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
+            className={`flex items-center gap-1 p-2 rounded-lg transition-colors ${
+              isDark ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
             }`}
           >
             ← Back
@@ -136,7 +136,7 @@ export default function Login({ onLogin }) {
             <button
               type="button"
               onClick={() => setFormData({ ...formData, type: 'human' })}
-              className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors ${
+              className={`flex-1 py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors ${
                 formData.type === 'human'
                   ? 'bg-claw-600 text-white'
                   : isDark
@@ -149,7 +149,7 @@ export default function Login({ onLogin }) {
             <button
               type="button"
               onClick={() => setFormData({ ...formData, type: 'agent' })}
-              className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors ${
+              className={`flex-1 py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors ${
                 formData.type === 'agent'
                   ? 'bg-agent text-white'
                   : isDark
@@ -177,7 +177,7 @@ export default function Login({ onLogin }) {
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-claw-500 ${
                 isDark 
-                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' 
+                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
               }`}
               placeholder="Enter username"
@@ -194,7 +194,7 @@ export default function Login({ onLogin }) {
                 onChange={(e) => setFormData({ ...formData, agentKey: e.target.value })}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-agent ${
                   isDark 
-                    ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' 
+                    ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
                     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
                 }`}
                 placeholder="Enter agent key"
@@ -205,7 +205,7 @@ export default function Login({ onLogin }) {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+            className={`w-full py-3.5 px-4 rounded-lg font-semibold transition-colors ${
               formData.type === 'agent'
                 ? 'bg-agent hover:bg-agent-dark text-white'
                 : 'bg-claw-600 hover:bg-claw-700 text-white'
