@@ -9,14 +9,14 @@ import EmojiPicker from './EmojiPicker';
 import MentionDropdown from './MentionDropdown';
 import EmojiAutocomplete from './EmojiAutocomplete';
 
-const MessageInput = forwardRef(function MessageInput({ 
-  onSend, 
-  channelId, 
-  emojiPickerOpen, 
-  setEmojiPickerOpen, 
-  users = [], 
-  replyTo, 
-  onCancelReply, 
+const MessageInput = forwardRef(function MessageInput({
+  onSend,
+  channelId,
+  emojiPickerOpen,
+  setEmojiPickerOpen,
+  users = [],
+  replyTo,
+  onCancelReply,
   token,
   placeholder,
   isThread = false
@@ -31,10 +31,10 @@ const MessageInput = forwardRef(function MessageInput({
   const fileInputRef = useRef(null);
   const { isDark } = useTheme();
   const mentionContainerRef = useRef(null);
-  
-  const { 
-    mentionState, 
-    handleInputChange, 
+
+  const {
+    mentionState,
+    handleInputChange,
     handleKeyDown: handleMentionKeyDown,
     selectMention,
     closeMentions,
@@ -66,15 +66,15 @@ const MessageInput = forwardRef(function MessageInput({
 
   const handleTyping = useCallback(() => {
     if (!channelId) return;
-    
+
     // Send typing start
     sendTyping(channelId, true);
-    
+
     // Clear previous timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    
+
     // Send typing stop after 3 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
       sendTyping(channelId, false);
@@ -162,16 +162,16 @@ const MessageInput = forwardRef(function MessageInput({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if ((!message.trim() && !hasAttachments) || isUploading) return;
-    
+
     // Close any open mentions
     closeMentions();
-    
+
     // Clear typing indicator immediately on send
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
     sendTyping(channelId, false);
-    
+
     // Upload attachments first if any
     let uploadedAttachments = [];
     if (hasAttachments) {
@@ -182,7 +182,7 @@ const MessageInput = forwardRef(function MessageInput({
         attachments.forEach(attachment => {
           formData.append('files', attachment.blob, attachment.name);
         });
-        
+
         const response = await fetch('/upload', {
           method: 'POST',
           headers: {
@@ -190,11 +190,11 @@ const MessageInput = forwardRef(function MessageInput({
           },
           body: formData
         });
-        
+
         if (!response.ok) {
           throw new Error('Upload failed');
         }
-        
+
         const result = await response.json();
         uploadedAttachments = result.files || [];
       } catch (err) {
@@ -205,12 +205,12 @@ const MessageInput = forwardRef(function MessageInput({
         setUploadProgress(0);
       }
     }
-    
+
     // Send message with attachments
     if (message.trim() || uploadedAttachments.length > 0) {
       onSend(message.trim(), uploadedAttachments);
     }
-    
+
     setMessage('');
     clearAttachments();
     if (textareaRef.current) {
@@ -226,14 +226,14 @@ const MessageInput = forwardRef(function MessageInput({
       });
       if (handledByEmoji) return;
     }
-    
+
     // Handle mention navigation
     const handledByMention = handleMentionKeyDown(e, message, (newValue) => {
       setMessage(newValue);
     });
-    
+
     if (handledByMention) return;
-    
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
@@ -250,7 +250,7 @@ const MessageInput = forwardRef(function MessageInput({
     const newValue = e.target.value;
     const cursorPosition = e.target.selectionStart;
     setMessage(newValue);
-    
+
     // Only trigger one autocomplete at a time (mentions take priority)
     if (!emojiState.isOpen) {
       handleInputChange(newValue, cursorPosition);
@@ -258,7 +258,7 @@ const MessageInput = forwardRef(function MessageInput({
     if (!mentionState.isOpen) {
       handleEmojiInputChange(newValue, cursorPosition);
     }
-    
+
     handleTyping();
   };
 
@@ -276,13 +276,13 @@ const MessageInput = forwardRef(function MessageInput({
   const insertAtSymbol = () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    
+
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const newMessage = message.substring(0, start) + '@' + message.substring(end);
-    
+
     setMessage(newMessage);
-    
+
     setTimeout(() => {
       textarea.focus();
       const newCursorPos = start + 1;
@@ -294,7 +294,7 @@ const MessageInput = forwardRef(function MessageInput({
   const handleFileSelect = (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    
+
     Array.from(files).forEach(file => {
       // Check file size (10MB limit)
       if (file.size > 10 * 1024 * 1024) {
@@ -303,7 +303,7 @@ const MessageInput = forwardRef(function MessageInput({
       }
       addAttachment(file);
     });
-    
+
     // Reset file input
     e.target.value = '';
   };
@@ -329,22 +329,22 @@ const MessageInput = forwardRef(function MessageInput({
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const newMessage = message.substring(0, start) + emoji + message.substring(end);
-    
+
     setMessage(newMessage);
-    
+
     // Focus back on textarea and position cursor after the inserted emoji
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + emoji.length, start + emoji.length);
     }, 0);
-    
+
     handleTyping();
   };
 
   return (
     <div className={`border-t transition-colors duration-200 ${
       isDark 
-        ? 'bg-gray-800 border-gray-700' 
+        ? 'bg-gray-800 border-gray-700'
         : 'bg-white border-gray-200'
     } ${isThread ? 'p-2' : 'p-4'}`}>
       {/* Attachments preview */}
@@ -355,7 +355,7 @@ const MessageInput = forwardRef(function MessageInput({
               key={attachment.id}
               className={`relative group rounded-lg overflow-hidden border ${
                 isDark 
-                  ? 'bg-gray-700 border-gray-600' 
+                  ? 'bg-gray-700 border-gray-600'
                   : 'bg-gray-100 border-gray-300'
               }`}
             >
@@ -374,10 +374,10 @@ const MessageInput = forwardRef(function MessageInput({
                 type="button"
                 onClick={() => removeAttachment(attachment.id)}
                 disabled={isUploading}
-                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md disabled:opacity-50"
+                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md disabled:opacity-50"
                 title="Remove attachment"
               >
-                <X className="w-3 h-3" />
+                <X className="w-4 h-4" />
               </button>
               <div className={`absolute bottom-0 left-0 right-0 px-1 py-0.5 ${
                 isDark ? 'bg-gray-900/80' : 'bg-gray-800/80'
@@ -388,12 +388,12 @@ const MessageInput = forwardRef(function MessageInput({
               </div>
             </div>
           ))}
-          
+
           {/* Uploading indicator */}
           {isUploading && (
             <div className={`flex items-center justify-center w-20 h-20 rounded-lg border ${
               isDark 
-                ? 'bg-gray-700 border-gray-600' 
+                ? 'bg-gray-700 border-gray-600'
                 : 'bg-gray-100 border-gray-300'
             }`}>
               <Loader2 className={`w-6 h-6 animate-spin ${isDark ? 'text-claw-400' : 'text-claw-500'}`} />
@@ -419,9 +419,9 @@ const MessageInput = forwardRef(function MessageInput({
           <button
             type="button"
             onClick={onCancelReply}
-            className={`p-1 rounded transition-colors ${
+            className={`p-2 rounded-lg transition-colors ${
               isDark 
-                ? 'hover:bg-gray-600 text-gray-400' 
+                ? 'hover:bg-gray-600 text-gray-400'
                 : 'hover:bg-gray-200 text-gray-500'
             }`}
             title="Cancel reply"
@@ -440,9 +440,9 @@ const MessageInput = forwardRef(function MessageInput({
           <button
             type="button"
             onClick={insertBold}
-            className={`p-1.5 rounded transition-colors ${
+            className={`p-2 rounded-lg transition-colors ${
               isDark 
-                ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-600'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
             }`}
             title="Bold"
@@ -452,9 +452,9 @@ const MessageInput = forwardRef(function MessageInput({
           <button
             type="button"
             onClick={insertItalic}
-            className={`p-1.5 rounded transition-colors ${
+            className={`p-2 rounded-lg transition-colors ${
               isDark 
-                ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-600'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
             }`}
             title="Italic"
@@ -464,9 +464,9 @@ const MessageInput = forwardRef(function MessageInput({
           <button
             type="button"
             onClick={insertCode}
-            className={`p-1.5 rounded transition-colors ${
+            className={`p-2 rounded-lg transition-colors ${
               isDark 
-                ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-600'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
             }`}
             title="Code"
@@ -476,9 +476,9 @@ const MessageInput = forwardRef(function MessageInput({
           <button
             type="button"
             onClick={insertStrikethrough}
-            className={`p-1.5 rounded transition-colors ${
+            className={`p-2 rounded-lg transition-colors ${
               isDark 
-                ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-600'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
             }`}
             title="Strikethrough"
@@ -510,7 +510,7 @@ const MessageInput = forwardRef(function MessageInput({
             rows={1}
             className={`flex-1 bg-transparent resize-none focus:outline-none max-h-32 ${
               isDark 
-                ? 'text-white placeholder-gray-500' 
+                ? 'text-white placeholder-gray-500'
                 : 'text-gray-900 placeholder-gray-400'
             } ${isThread ? 'px-3 py-2' : 'px-4 py-3'}`}
             style={{ minHeight: isThread ? '36px' : '48px' }}
@@ -527,11 +527,11 @@ const MessageInput = forwardRef(function MessageInput({
             <button
               type="button"
               onClick={insertAtSymbol}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2.5 rounded-lg transition-colors ${
                 mentionState.isOpen
                   ? 'text-claw-400 bg-claw-500/20'
                   : isDark 
-                    ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600' 
+                    ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600'
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
               }`}
               title="Mention someone (@)"
@@ -541,9 +541,9 @@ const MessageInput = forwardRef(function MessageInput({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2.5 rounded-lg transition-colors ${
                 isDark 
-                  ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600' 
+                  ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600'
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
               }`}
               title="Attach file"
@@ -554,9 +554,9 @@ const MessageInput = forwardRef(function MessageInput({
               <button
                 type="button"
                 onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2.5 rounded-lg transition-colors ${
                   emojiPickerOpen 
-                    ? 'text-claw-400 bg-claw-500/20' 
+                    ? 'text-claw-400 bg-claw-500/20'
                     : isDark
                       ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-600'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
@@ -577,7 +577,7 @@ const MessageInput = forwardRef(function MessageInput({
         <button
           type="submit"
           disabled={(!message.trim() && !hasAttachments) || isUploading}
-          className="px-4 bg-claw-600 hover:bg-claw-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center justify-center"
+          className="px-4 py-2.5 bg-claw-600 hover:bg-claw-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center justify-center"
         >
           {isUploading ? (
             <Loader2 className="w-5 h-5 text-white animate-spin" />
@@ -585,7 +585,7 @@ const MessageInput = forwardRef(function MessageInput({
             <Send className="w-5 h-5 text-white" />
           )}
         </button>
-        
+
         {/* Mention Dropdown */}
         <MentionDropdown
           isOpen={mentionState.isOpen}
