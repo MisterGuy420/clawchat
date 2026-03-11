@@ -8,9 +8,9 @@ export default function ThemeToggle({ className = '' }) {
   return (
     <button
       onClick={toggleTheme}
-      className={`p-2 rounded-lg transition-all duration-200 ${
-        isDark 
-          ? 'text-gray-400 hover:text-yellow-300 hover:bg-gray-700' 
+      className={`p-2 rounded-lg transition-all duration-200
+      ${isDark 
+          ? 'text-gray-400 hover:text-yellow-300 hover:bg-gray-700'
           : 'text-gray-600 hover:text-orange-500 hover:bg-gray-200'
       } ${className}`}
       title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
