@@ -59,7 +59,7 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
   return (
     <div className={`h-14 border-b flex items-center justify-between px-4 transition-colors duration-200 ${
       isDark 
-        ? 'bg-gray-800 border-gray-700' 
+        ? 'bg-gray-800 border-gray-700'
         : 'bg-white border-gray-200'
     }`}>
       <div className="flex items-center gap-3">
@@ -91,7 +91,7 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
                 placeholder="Search messages..."
                 className={`w-64 pl-9 pr-8 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-claw-500 ${
                   isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                     : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'
                 }`}
               />
@@ -99,9 +99,9 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
                 <button
                   type="button"
                   onClick={handleClear}
-                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded ${
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full ${
                     isDark 
-                      ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                      ? 'text-gray-400 hover:text-white hover:bg-gray-600'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-300'
                   }`}
                 >
@@ -112,9 +112,9 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
             <button
               type="button"
               onClick={handleSearchToggle}
-              className={`p-1.5 rounded transition-colors ${
+              className={`p-2 rounded-lg transition-colors ${
                 isDark 
-                  ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                  ? 'text-gray-400 hover:text-white hover:bg-gray-700'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
               }`}
               title="Close search (Esc)"
@@ -125,9 +125,9 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
         ) : (
           <button
             onClick={handleSearchToggle}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-2.5 rounded-lg transition-colors ${
               isDark 
-                ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-700'
                 : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
             }`}
             title="Search messages (Ctrl+K)"
@@ -138,9 +138,9 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
 
         <button
           onClick={onShowShortcuts}
-          className={`p-2 rounded-lg transition-colors ${
+          className={`p-2.5 rounded-lg transition-colors ${
             isDark 
-              ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+              ? 'text-gray-400 hover:text-white hover:bg-gray-700'
               : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
           }`}
           title="Keyboard shortcuts (Ctrl+/)"
@@ -153,9 +153,9 @@ export default function ChannelHeader({ channel, connected, userCount, onShowSho
 
         <button
           onClick={onToggleSound}
-          className={`p-2 rounded-lg transition-colors ${
+          className={`p-2.5 rounded-lg transition-colors ${
             soundEnabled 
-              ? 'text-claw-400 hover:bg-claw-500/20' 
+              ? 'text-claw-400 hover:bg-claw-500/20'
               : isDark
                 ? 'text-gray-400 hover:text-white hover:bg-gray-700'
                 : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'
